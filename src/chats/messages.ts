@@ -42,9 +42,10 @@ export class MessageManager {
     chatType: 'channel' | 'conversation',
     options: { limit?: number; offset?: number; key?: Buffer } = {}
   ): Promise<Message[]> {
+    const sourceIdKey = chatType === 'conversation' ? 'conversation_id' : 'channel_id';
     const request = this.api.createAuthenticatedRequestData({
-      id,
-      type: chatType,
+      [sourceIdKey]: id,
+      source: chatType,
       limit: options.limit || 50,
       offset: options.offset || 0,
     });
@@ -81,9 +82,10 @@ export class MessageManager {
 
   /** Send a message to a channel or conversation */
   async sendMessage(options: SendMessageOptions): Promise<Message> {
+    const targetIdKey = options.target_type === 'conversation' ? 'conversation_id' : 'channel_id';
     const request = this.api.createAuthenticatedRequestData({
-      target: options.target,
-      target_type: options.target_type,
+      target: options.target_type,
+      [targetIdKey]: options.target,
       text: options.text,
       files: options.files,
       url: options.url,

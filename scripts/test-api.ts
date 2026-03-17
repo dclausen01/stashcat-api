@@ -231,10 +231,17 @@ async function main() {
       console.log(`    └─ Letzte Nachricht: "${msg.text?.slice(0, 60)}" von ${sender}`);
     }
 
-    // Folder
-    await test(`listFolder(conversation)`,
-      () => client.listFolder({ type: 'conversation', type_id: firstConvId! }),
-      items => `${items.length} Einträge`);
+    // Folder (requires E2E encryption / private key on the account)
+    const hasPrivateKey = await (async () => {
+      try { const r = await client.getPrivateKey(); return !!r.private_key; } catch { return false; }
+    })();
+    if (hasPrivateKey) {
+      await test(`listFolder(conversation)`,
+        () => client.listFolder({ type: 'conversation', type_id: firstConvId! }),
+        items => `${items.length} Einträge`);
+    } else {
+      skip('listFolder(conversation)', 'Kein E2E-Schlüssel auf dem Konto (private_key nicht gesetzt)');
+    }
   } else {
     skip('getConversation()', 'Keine Conversation gefunden');
     skip('getMessages(conversation)', 'Keine Conversation gefunden');
