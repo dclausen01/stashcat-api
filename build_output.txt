@@ -1,0 +1,6 @@
+Das System kann den angegebenen Pfad nicht finden.
+Das System kann den angegebenen Pfad nicht finden.
+
+> stashcat-api@1.0.0 build
+> tsc
+

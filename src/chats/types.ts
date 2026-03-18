@@ -24,6 +24,14 @@ export interface Conversation {
   last_message?: Message;
   created_at: string;
   updated_at: string;
+  /** Number of unread messages in this conversation */
+  unread_count?: number;
+  /** Whether the conversation is archived */
+  archived?: boolean;
+  /** Whether the conversation is a favorite */
+  is_favorite?: boolean;
+  /** Whether the conversation is encrypted */
+  encrypted?: boolean;
 }
 
 export interface ConversationParticipant {
@@ -32,6 +40,14 @@ export interface ConversationParticipant {
   conversation_id: string;
   joined_at: string;
   left_at?: string;
+}
+
+export interface MessageFile {
+  id: string;
+  name: string;
+  size: number;
+  mime_type: string;
+  encrypted?: boolean;
 }
 
 export interface Message {
@@ -47,6 +63,18 @@ export interface Message {
   iv?: string;
   hash?: string;
   verification?: string;
+  /** Attached files */
+  files?: MessageFile[];
+  /** ID of the message this is a reply to */
+  reply_to_id?: string;
+  /** Number of likes */
+  likes?: number;
+  /** Whether the current user has liked this message */
+  liked?: boolean;
+  /** Whether the current user has flagged this message */
+  flagged?: boolean;
+  /** Whether the message has been edited */
+  edited?: boolean;
 }
 
 export interface MessageSender {

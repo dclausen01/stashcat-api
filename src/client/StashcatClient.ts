@@ -20,6 +20,18 @@ export interface StashcatClientConfig extends StashcatConfig {
   appName?: string;
 }
 
+/** Serialized session state for persistence between requests (e.g. Nextcloud plugin) */
+export interface SerializedSession {
+  deviceId: string;
+  clientKey: string;
+  /** AES encryption key as hex string */
+  encryptionKeyHex?: string;
+  /** AES IV as hex string */
+  encryptionIvHex?: string;
+  /** Base URL of the Stashcat instance */
+  baseUrl?: string;
+}
+
 export class StashcatClient {
   private api: StashcatAPI;
   private auth: AuthManager;
@@ -54,6 +66,52 @@ export class StashcatClient {
   logout(): void {
     this.auth.logout();
     this.encryptionKey = undefined;
+  }
+
+  /**
+   * Serialize the current session to a plain object that can be stored
+   * (e.g. in a Nextcloud database) and restored later without re-login.
+   */
+  serialize(): SerializedSession {
+    if (!this.isAuthenticated()) {
+      throw new Error('Cannot serialize: not authenticated.');
+    }
+    const clientKey = this.auth.getClientKey();
+    if (!clientKey) {
+      throw new Error('Cannot serialize: client_key missing.');
+    }
+    return {
+      deviceId: this.api.getDeviceId(),
+      clientKey,
+      encryptionKeyHex: this.encryptionKey?.key.toString('hex'),
+      encryptionIvHex: this.encryptionKey?.iv.toString('hex'),
+      baseUrl: undefined, // consumer can add this if needed
+    };
+  }
+
+  /**
+   * Restore a previously serialized session without performing a new login.
+   * Use this in Nextcloud plugins to reuse an existing session across requests.
+   *
+   * @example
+   * const session = JSON.parse(await db.get('stashcat_session'));
+   * const client = StashcatClient.fromSession(session);
+   * await client.getConversations();
+   */
+  static fromSession(session: SerializedSession, config: StashcatClientConfig = {}): StashcatClient {
+    const client = new StashcatClient({
+      ...config,
+      baseUrl: session.baseUrl || config.baseUrl,
+      deviceId: session.deviceId,
+    });
+    client.auth.restoreSession(session.clientKey);
+    if (session.encryptionKeyHex && session.encryptionIvHex) {
+      client.encryptionKey = {
+        key: Buffer.from(session.encryptionKeyHex, 'hex'),
+        iv: Buffer.from(session.encryptionIvHex, 'hex'),
+      };
+    }
+    return client;
   }
 
   isAuthenticated(): boolean {
@@ -198,7 +256,7 @@ export class StashcatClient {
   async getMessages(
     id: string,
     chatType: 'channel' | 'conversation',
-    options: { limit?: number; offset?: number } = {}
+    options: { limit?: number; offset?: number; after_message_id?: string } = {}
   ): Promise<Message[]> {
     this.requireAuth();
     return this.messages.getMessages(id, chatType, {
@@ -215,6 +273,15 @@ export class StashcatClient {
   async deleteMessage(messageId: string): Promise<void> {
     this.requireAuth();
     return this.messages.deleteMessage(messageId);
+  }
+
+  async markAsRead(
+    id: string,
+    chatType: 'channel' | 'conversation',
+    messageId: string
+  ): Promise<void> {
+    this.requireAuth();
+    return this.messages.markAsRead(id, chatType, messageId);
   }
 
   async likeMessage(messageId: string): Promise<void> {
@@ -345,3 +412,4 @@ export class StashcatClient {
     }
   }
 }
+

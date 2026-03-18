@@ -31,6 +31,8 @@ export interface SendMessageOptions {
   /** Signature/verification for E2E */
   verification?: string;
   is_forwarded?: boolean;
+  /** Reply to a specific message ID */
+  reply_to_id?: string;
 }
 
 export class MessageManager {
@@ -40,7 +42,7 @@ export class MessageManager {
   async getMessages(
     id: string,
     chatType: 'channel' | 'conversation',
-    options: { limit?: number; offset?: number; key?: Buffer } = {}
+    options: { limit?: number; offset?: number; after_message_id?: string; key?: Buffer } = {}
   ): Promise<Message[]> {
     const sourceIdKey = chatType === 'conversation' ? 'conversation_id' : 'channel_id';
     const request = this.api.createAuthenticatedRequestData({
@@ -48,6 +50,7 @@ export class MessageManager {
       source: chatType,
       limit: options.limit || 50,
       offset: options.offset || 0,
+      after_message_id: options.after_message_id,
     });
 
     try {
@@ -95,6 +98,7 @@ export class MessageManager {
       longitude: options.longitude,
       verification: options.verification,
       is_forwarded: options.is_forwarded,
+      reply_to_id: options.reply_to_id,
     });
 
     try {
@@ -112,6 +116,27 @@ export class MessageManager {
       await this.api.post('/message/delete', request);
     } catch (error) {
       throw new Error(`Failed to delete message: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * Mark messages as read up to (and including) the given message ID.
+   * Pass the ID of the newest visible message to mark all previous as read.
+   */
+  async markAsRead(
+    id: string,
+    chatType: 'channel' | 'conversation',
+    messageId: string
+  ): Promise<void> {
+    const sourceIdKey = chatType === 'conversation' ? 'conversation_id' : 'channel_id';
+    const request = this.api.createAuthenticatedRequestData({
+      [sourceIdKey]: id,
+      message_id: messageId,
+    });
+    try {
+      await this.api.post('/message/mark_read', request);
+    } catch (error) {
+      throw new Error(`Failed to mark as read: ${error instanceof Error ? error.message : error}`);
     }
   }
 

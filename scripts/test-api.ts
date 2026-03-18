@@ -260,6 +260,9 @@ async function main() {
       m => `id=${m.id}`);
 
     if (sentMsg) {
+      await test(`markAsRead(conversation, ${sentMsg.id})`,
+        () => client.markAsRead(firstConvId!, 'conversation', sentMsg.id));
+
       await test(`likeMessage(${sentMsg.id})`, () => client.likeMessage(sentMsg.id));
       await test(`unlikeMessage(${sentMsg.id})`, () => client.unlikeMessage(sentMsg.id));
       await test(`flagMessage(${sentMsg.id})`, () => client.flagMessage(sentMsg.id));
@@ -332,8 +335,30 @@ async function main() {
     skip('changeStatus()', 'TEST_RUN_WRITE=1 nicht gesetzt');
   }
 
-  // ── 9. Verschlüsselung ───────────────────────────────────────────────────
-  header('9 · Verschlüsselung (lokal, kein API-Aufruf)');
+  // ── 9a. Session-Serialisierung ───────────────────────────────────────────
+  header('9a · Session-Serialisierung');
+
+  await test('client.serialize()', async () => {
+    const session = client.serialize();
+    if (!session.deviceId) throw new Error('deviceId fehlt');
+    if (!session.clientKey) throw new Error('clientKey fehlt');
+    return session;
+  }, s => `deviceId=${s.deviceId.slice(0, 8)}… clientKey=${s.clientKey.slice(0, 8)}…`);
+
+  await test('StashcatClient.fromSession() → isAuthenticated', async () => {
+    const { StashcatClient: SC } = await import('../src/index');
+    const session = client.serialize();
+    const restored = SC.fromSession(session, {
+      baseUrl: env('STASHCAT_BASE_URL'),
+    });
+    if (!restored.isAuthenticated()) throw new Error('Restored client nicht authentifiziert');
+    // Quick smoke test: getMe() should work
+    await restored.getMe();
+    return restored.getClientInfo();
+  }, info => `restored deviceId=${info.deviceId.slice(0, 8)}… encKey=${info.hasEncryptionKey}`);
+
+  // ── 9b. Verschlüsselung ──────────────────────────────────────────────────
+  header('9b · Verschlüsselung (lokal, kein API-Aufruf)');
 
   await test('CryptoManager.generateKey()', async () => {
     const { CryptoManager } = await import('../src/encryption/crypto');

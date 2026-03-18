@@ -41,6 +41,16 @@ export class AuthManager {
     }
   }
 
+  /**
+   * Restore a previously serialized session without a new login.
+   * Useful for Nextcloud plugins that persist the client_key between requests.
+   */
+  restoreSession(clientKey: string): void {
+    this.state.clientKey = clientKey;
+    this.state.isAuthenticated = true;
+    this.api.setClientKey(clientKey);
+  }
+
   logout(): void {
     this.state.clientKey = undefined;
     this.state.isAuthenticated = false;

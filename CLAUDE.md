@@ -28,19 +28,19 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 
 ### Component Map
 
-| Manager | File | Responsibility |
-|---|---|---|
-| `StashcatClient` | `src/client/StashcatClient.ts` | Public facade, auth guard, composes all managers |
-| `StashcatAPI` | `src/api/request.ts` | HTTP layer: Axios, device_id, client_key injection, status validation |
-| `AuthManager` | `src/auth/login.ts` | Login/logout, AuthState |
-| `ChannelManager` | `src/chats/channels.ts` | Full channel lifecycle (CRUD, members, moderation, invites) |
-| `ConversationManager` | `src/chats/conversations.ts` | Conversations (list, create, archive, favorites) |
-| `MessageManager` | `src/chats/messages.ts` | Messages (read, send, delete, like, flag) + file download |
-| `UserManager` | `src/users/users.ts` | Own profile, user info by ID, company members |
-| `AccountManager` | `src/account/account.ts` | Status, password, settings, devices, profile image, notifications |
-| `FileManager` | `src/files/files.ts` | File info, folder listing, chunked upload, delete, rename, move, copy |
-| `SecurityManager` | `src/security/security.ts` | Private key retrieval, file access keys |
-| `CryptoManager` | `src/encryption/crypto.ts` | Static: AES-256-CBC, RSA-2048, encoding utilities |
+| Manager               | File                           | Responsibility                                                        |
+| --------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `StashcatClient`      | `src/client/StashcatClient.ts` | Public facade, auth guard, composes all managers                      |
+| `StashcatAPI`         | `src/api/request.ts`           | HTTP layer: Axios, device_id, client_key injection, status validation |
+| `AuthManager`         | `src/auth/login.ts`            | Login/logout, AuthState                                               |
+| `ChannelManager`      | `src/chats/channels.ts`        | Full channel lifecycle (CRUD, members, moderation, invites)           |
+| `ConversationManager` | `src/chats/conversations.ts`   | Conversations (list, create, archive, favorites)                      |
+| `MessageManager`      | `src/chats/messages.ts`        | Messages (read, send, delete, like, flag) + file download             |
+| `UserManager`         | `src/users/users.ts`           | Own profile, user info by ID, company members                         |
+| `AccountManager`      | `src/account/account.ts`       | Status, password, settings, devices, profile image, notifications     |
+| `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
+| `SecurityManager`     | `src/security/security.ts`     | Private key retrieval, file access keys                               |
+| `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-2048, encoding utilities                     |
 
 ### Request Flow
 
@@ -62,93 +62,103 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 
 ### Auth
-| Endpoint | Manager |
-|---|---|
+
+| Endpoint      | Manager     |
+| ------------- | ----------- |
 | `/auth/login` | AuthManager |
 
 ### Channels
-| Endpoint | Method |
-|---|---|
-| `/channels/subscripted` | `getChannels()` |
-| `/channels/visible` | `getVisibleChannels()` |
-| `/channels/info` | `getChannelInfo()` |
-| `/channels/create` | `createChannel()` |
-| `/channels/edit` | `editChannel()` |
-| `/channels/delete` | `deleteChannel()` |
-| `/channels/join` | `joinChannel()` |
-| `/channels/quit` | `quitChannel()` |
-| `/channels/createInvite` | `inviteUsersToChannel()` |
-| `/channels/acceptInvite` | `acceptChannelInvite()` |
-| `/channels/declineInvite` | `declineChannelInvite()` |
-| `/channels/members` | `getChannelMembers()` |
-| `/channels/removeUser` | `removeUserFromChannel()` |
-| `/channels/addModeratorStatus` | `addChannelModerator()` |
+
+| Endpoint                          | Method                     |
+| --------------------------------- | -------------------------- |
+| `/channels/subscripted`           | `getChannels()`            |
+| `/channels/visible`               | `getVisibleChannels()`     |
+| `/channels/info`                  | `getChannelInfo()`         |
+| `/channels/create`                | `createChannel()`          |
+| `/channels/edit`                  | `editChannel()`            |
+| `/channels/delete`                | `deleteChannel()`          |
+| `/channels/join`                  | `joinChannel()`            |
+| `/channels/quit`                  | `quitChannel()`            |
+| `/channels/createInvite`          | `inviteUsersToChannel()`   |
+| `/channels/acceptInvite`          | `acceptChannelInvite()`    |
+| `/channels/declineInvite`         | `declineChannelInvite()`   |
+| `/channels/members`               | `getChannelMembers()`      |
+| `/channels/removeUser`            | `removeUserFromChannel()`  |
+| `/channels/addModeratorStatus`    | `addChannelModerator()`    |
 | `/channels/removeModeratorStatus` | `removeChannelModerator()` |
 
 ### Conversations
-| Endpoint | Method |
-|---|---|
-| `/message/conversations` | `getConversations()` |
-| `/message/conversation` | `getConversation()` |
+
+| Endpoint                               | Method                          |
+| -------------------------------------- | ------------------------------- |
+| `/message/conversations`               | `getConversations()`            |
+| `/message/conversation`                | `getConversation()`             |
 | `/message/createEncryptedConversation` | `createEncryptedConversation()` |
-| `/message/archiveConversation` | `archiveConversation()` |
-| `/message/set_favorite` | `setConversationFavorite()` |
+| `/message/archiveConversation`         | `archiveConversation()`         |
+| `/message/set_favorite`                | `setConversationFavorite()`     |
 
 ### Messages
-| Endpoint | Method |
-|---|---|
-| `/message/content` | `getMessages()` |
-| `/message/send` | `sendMessage()` |
-| `/message/delete` | `deleteMessage()` |
-| `/message/like` | `likeMessage()` |
-| `/message/unlike` | `unlikeMessage()` |
-| `/message/flag` | `flagMessage()` |
-| `/message/unflag` | `unflagMessage()` |
+
+| Endpoint                         | Method                 |
+| -------------------------------- | ---------------------- |
+| `/message/content`               | `getMessages()`        |
+| `/message/send`                  | `sendMessage()`        |
+| `/message/delete`                | `deleteMessage()`      |
+| `/message/mark_read`             | `markAsRead()`         |
+| `/message/like`                  | `likeMessage()`        |
+| `/message/unlike`                | `unlikeMessage()`      |
+| `/message/flag`                  | `flagMessage()`        |
+| `/message/unflag`                | `unflagMessage()`      |
 | `/message/list_flagged_messages` | `getFlaggedMessages()` |
 
 ### Files
-| Endpoint | Method |
-|---|---|
-| `/file/download` | `downloadFile()` |
-| `/file/upload` | `uploadFile()` (chunked) |
-| `/file/info` | `getFileInfo()` |
-| `/file/infos` | `FileManager.getFileInfos()` |
-| `/file/delete` | `deleteFiles()` |
-| `/file/rename` | `renameFile()` |
-| `/file/move` | `moveFile()` |
-| `/file/copy` | `FileManager.copyFile()` |
-| `/file/quota` | `getStorageQuota()` |
-| `/folder/get` | `listFolder()` |
+
+| Endpoint         | Method                       |
+| ---------------- | ---------------------------- |
+| `/file/download` | `downloadFile()`             |
+| `/file/upload`   | `uploadFile()` (chunked)     |
+| `/file/info`     | `getFileInfo()`              |
+| `/file/infos`    | `FileManager.getFileInfos()` |
+| `/file/delete`   | `deleteFiles()`              |
+| `/file/rename`   | `renameFile()`               |
+| `/file/move`     | `moveFile()`                 |
+| `/file/copy`     | `FileManager.copyFile()`     |
+| `/file/quota`    | `getStorageQuota()`          |
+| `/folder/get`    | `listFolder()`               |
 
 ### Users & Company
-| Endpoint | Method |
-|---|---|
-| `/users/me` | `getMe()` |
-| `/users/info` | `getUserInfo()` |
+
+| Endpoint          | Method                |
+| ----------------- | --------------------- |
+| `/users/me`       | `getMe()`             |
+| `/users/info`     | `getUserInfo()`       |
 | `/company/member` | `getCompanyMembers()` |
 
 ### Account
-| Endpoint | Method |
-|---|---|
-| `/account/change_status` | `changeStatus()` |
-| `/account/change_password` | `changePassword()` |
-| `/account/settings` | `getAccountSettings()` |
-| `/account/list_active_devices` | `listActiveDevices()` |
-| `/account/deactivate_device` | `deactivateDevice()` |
-| `/account/store_profile_image` | `storeProfileImage()` |
-| `/notifications/get` | `getNotifications()` |
-| `/notifications/count` | `getNotificationCount()` |
+
+| Endpoint                       | Method                   |
+| ------------------------------ | ------------------------ |
+| `/account/change_status`       | `changeStatus()`         |
+| `/account/change_password`     | `changePassword()`       |
+| `/account/settings`            | `getAccountSettings()`   |
+| `/account/list_active_devices` | `listActiveDevices()`    |
+| `/account/deactivate_device`   | `deactivateDevice()`     |
+| `/account/store_profile_image` | `storeProfileImage()`    |
+| `/notifications/get`           | `getNotifications()`     |
+| `/notifications/count`         | `getNotificationCount()` |
 
 ### Security
-| Endpoint | Method |
-|---|---|
-| `/security/get_private_key` | `getPrivateKey()` |
+
+| Endpoint                        | Method                               |
+| ------------------------------- | ------------------------------------ |
+| `/security/get_private_key`     | `getPrivateKey()`                    |
 | `/security/set_file_access_key` | `SecurityManager.setFileAccessKey()` |
 
 ### Notifications (shared)
-| Endpoint | Method |
-|---|---|
-| `/push/enable_notifications` | `ChannelManager / ConversationManager` |
+
+| Endpoint                      | Method                                 |
+| ----------------------------- | -------------------------------------- |
+| `/push/enable_notifications`  | `ChannelManager / ConversationManager` |
 | `/push/disable_notifications` | `ChannelManager / ConversationManager` |
 
 ## Key Files
@@ -160,15 +170,16 @@ src/
 │   ├── request.ts             # StashcatAPI — HTTP layer only, no business logic
 │   └── response.ts            # APIResponse, APIStatus interfaces
 ├── auth/
-│   ├── login.ts               # AuthManager
+│   ├── login.ts               # AuthManager (incl. restoreSession() for session persistence)
 │   └── types.ts               # LoginRequest, LoginResponse, AuthState, AuthConfig
 ├── chats/
 │   ├── channels.ts            # ChannelManager (full CRUD + moderation)
 │   ├── conversations.ts       # ConversationManager
-│   ├── messages.ts            # MessageManager + file download
-│   └── types.ts               # Channel, Conversation, Message, File, PaginationOptions
+│   ├── messages.ts            # MessageManager + file download + markAsRead
+│   └── types.ts               # Channel, Conversation, Message, MessageFile, File, PaginationOptions
 ├── client/
 │   └── StashcatClient.ts      # Main facade — primary entry point for consumers
+                                # Incl. serialize() / fromSession() for Nextcloud session persistence
 ├── users/
 │   ├── users.ts               # UserManager
 │   └── types.ts               # User, CompanyMember
@@ -209,10 +220,12 @@ dist/                          # Build output (git-ignored)
 ```typescript
 try {
   const data = this.api.createAuthenticatedRequestData({ param });
-  const payload = await this.api.post<ResponseType>('/endpoint', data);
+  const payload = await this.api.post<ResponseType>("/endpoint", data);
   return payload.items || [];
 } catch (error) {
-  throw new Error(`Failed to X: ${error instanceof Error ? error.message : error}`);
+  throw new Error(
+    `Failed to X: ${error instanceof Error ? error.message : error}`,
+  );
 }
 ```
 
@@ -250,12 +263,13 @@ Do **not** add auth checks inside individual Managers — they assume the API al
 - Run with `npm test`, TDD mode with `npm run test:watch`
 
 Example test structure:
+
 ```typescript
 // test/chats/channels.test.ts
-import { ChannelManager } from '../../src/chats/channels';
+import { ChannelManager } from "../../src/chats/channels";
 
-describe('ChannelManager', () => {
-  it('should return channels for a company', async () => {
+describe("ChannelManager", () => {
+  it("should return channels for a company", async () => {
     // mock StashcatAPI, call getChannels(), assert result
   });
 });
@@ -282,9 +296,127 @@ STASHCAT_DEVICE_ID=                           # Optional; auto-generated if omit
 - File upload encryption: provide `encrypted: true` and `iv` (hex) in `FileUploadOptions`
 - `SecurityManager.getPrivateKey()` retrieves the server-stored RSA private key for E2E flows
 
+## Session Persistence (for Nextcloud plugin)
+
+`StashcatClient` supports serializing and restoring an authenticated session without re-login.
+This is essential for Nextcloud plugins where each HTTP request creates a new PHP/Node process.
+
+```typescript
+// After login: serialize and store in Nextcloud DB
+const session = client.serialize(); // { deviceId, clientKey, encryptionKeyHex, encryptionIvHex }
+await db.set("stashcat_session_" + userId, JSON.stringify(session));
+
+// On next request: restore without re-login
+const session = JSON.parse(await db.get("stashcat_session_" + userId));
+const client = StashcatClient.fromSession(session, {
+  baseUrl: process.env.STASHCAT_BASE_URL,
+});
+await client.getConversations(); // works immediately
+```
+
+`SerializedSession` interface (exported from `src/index.ts`):
+
+```typescript
+interface SerializedSession {
+  deviceId: string;
+  clientKey: string;
+  encryptionKeyHex?: string; // AES key as hex
+  encryptionIvHex?: string; // AES IV as hex
+  baseUrl?: string; // optional, can be set during fromSession()
+}
+```
+
+Internally, `AuthManager.restoreSession(clientKey)` sets the auth state and injects the
+`client_key` into `StashcatAPI` without a network call.
+
+## Extended Type Definitions
+
+### Message (src/chats/types.ts)
+
+New optional fields added to match actual API responses:
+
+- `files?: MessageFile[]` — attached files
+- `reply_to_id?: string` — ID of the message being replied to
+- `likes?: number` — number of likes
+- `liked?: boolean` — whether the current user liked this message
+- `flagged?: boolean` — whether the current user flagged this message
+- `edited?: boolean` — whether the message was edited
+
+### MessageFile (src/chats/types.ts)
+
+New interface for file attachments in messages:
+
+```typescript
+interface MessageFile {
+  id: string;
+  name: string;
+  size: number;
+  mime_type: string;
+  encrypted?: boolean;
+}
+```
+
+### Conversation (src/chats/types.ts)
+
+New optional fields:
+
+- `unread_count?: number` — unread message count (likely present in API response)
+- `archived?: boolean`
+- `is_favorite?: boolean`
+- `encrypted?: boolean`
+
+## Extended Method Signatures
+
+### getMessages()
+
+```typescript
+getMessages(
+  id: string,
+  chatType: 'channel' | 'conversation',
+  options: { limit?: number; offset?: number; after_message_id?: string } = {}
+): Promise<Message[]>
+```
+
+`after_message_id` — fetch only messages newer than the given ID (for polling).
+**Note:** Whether the Stashcat API actually supports this parameter needs verification via API test.
+
+### sendMessage()
+
+```typescript
+interface SendMessageOptions {
+  // ... existing fields ...
+  reply_to_id?: string; // NEW: reply to a specific message
+}
+```
+
+**Note:** Whether `/message/send` accepts `reply_to_id` needs verification via API test.
+
+### markAsRead()
+
+```typescript
+markAsRead(
+  id: string,
+  chatType: 'channel' | 'conversation',
+  messageId: string   // ID of the newest message to mark as read
+): Promise<void>
+```
+
+Calls `/message/mark_read`. **Note:** Exact endpoint name needs verification — alternatives:
+`/message/mark_as_read`, `/message/read`.
+
+## Known API Limitations (confirmed)
+
+- **No `editMessage()`** — Stashcat does not provide a message-edit endpoint. Messages can only be deleted.
+- **No `deleteConversation()`** — Conversations can only be archived (`archiveConversation()`), not deleted.
+- **No emoji reactions** — Stashcat does not support emoji reactions; only like/unlike is available.
+- **No message search** — No `/message/search` endpoint known.
+
 ## Known Gaps (not yet implemented)
 
 - Calendar module (`/calendar/*`)
 - Surveys/polls (`/survey/*`)
 - Admin/management functions (`/manage/*`)
 - Voice/video calls (proprietary, likely not REST-based)
+- Full E2E key exchange for multi-participant conversations (key distribution flow)
+- Auto-reconnect on session expiry
+- Multi-user session pool (needed for Nextcloud: one `StashcatClient` per Nextcloud user)
