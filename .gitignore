@@ -80,3 +80,14 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# Stashcat session cache (contains credentials – never commit!)
+.stashcat-session.json
+
+# Claude Code agent memory & config
+.claude/
+
+# Test run output files
+scripts/run-stdout.txt
+scripts/run-stderr.txt
+scripts/run-output.txt

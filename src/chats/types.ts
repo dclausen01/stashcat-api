@@ -45,9 +45,24 @@ export interface ConversationParticipant {
 export interface MessageFile {
   id: string;
   name: string;
-  size: number;
-  mime_type: string;
+  /** Dateigröße als lesbarer String (z. B. "63 kb") */
+  size_string?: string;
+  /** Dateigröße in Bytes als String */
+  size_byte?: string;
+  /** MIME-Typ (API-Feld heißt "mime", nicht "mime_type") */
+  mime?: string;
+  /** Dateiendung ohne Punkt */
+  ext?: string;
   encrypted?: boolean;
+  e2e_iv?: string | null;
+  /** Ordner-Typ des Speichers, z. B. "channel" oder "conversation" */
+  folder_type?: string;
+  type_id?: string;
+  owner_id?: string;
+  md5?: string;
+  uploaded?: string;
+  modified?: string;
+  deleted?: string | null;
 }
 
 export interface Message {
@@ -79,8 +94,11 @@ export interface Message {
 
 export interface MessageSender {
   id: string;
-  name: string;
-  email: string;
+  /** Vollständiger Name (manchmal befüllt) */
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
 }
 
 export interface File {

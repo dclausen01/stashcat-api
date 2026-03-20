@@ -21,7 +21,7 @@ export { AccountSettings, ActiveDevice, Notification } from './account/types';
 
 // Files
 export { FileManager } from './files/files';
-export { FileInfo, FolderItem, FolderListOptions, FileUploadOptions, FileQuota } from './files/types';
+export { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota, FileStorageType } from './files/types';
 
 // Security
 export { SecurityManager, PrivateKeyResponse } from './security/security';

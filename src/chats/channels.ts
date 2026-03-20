@@ -6,7 +6,9 @@ interface ChannelsResponse {
 }
 
 interface ChannelResponse {
-  channel: Channel;
+  // Note: API returns 'channels' (not 'channel') for single-channel endpoints
+  channels: Channel;
+  channel?: Channel;
 }
 
 interface ChannelMembersResponse {
@@ -86,7 +88,7 @@ export class ChannelManager {
     });
     try {
       const response = await this.api.post<ChannelResponse>('/channels/info', request);
-      return response.channel;
+      return response.channels ?? response.channel!;
     } catch (error) {
       throw new Error(`Failed to get channel info: ${error instanceof Error ? error.message : error}`);
     }
@@ -97,7 +99,9 @@ export class ChannelManager {
     const request = this.api.createAuthenticatedRequestData(options);
     try {
       const response = await this.api.post<ChannelResponse>('/channels/create', request);
-      return response.channel;
+      const ch = response.channels ?? response.channel;
+      if (!ch) throw new Error('No channel in response');
+      return ch;
     } catch (error) {
       throw new Error(`Failed to create channel: ${error instanceof Error ? error.message : error}`);
     }
@@ -108,7 +112,9 @@ export class ChannelManager {
     const request = this.api.createAuthenticatedRequestData(options);
     try {
       const response = await this.api.post<ChannelResponse>('/channels/edit', request);
-      return response.channel;
+      const ch = response.channels ?? response.channel;
+      if (!ch) throw new Error('No channel in response');
+      return ch;
     } catch (error) {
       throw new Error(`Failed to edit channel: ${error instanceof Error ? error.message : error}`);
     }

@@ -90,7 +90,8 @@ export class MessageManager {
       target: options.target_type,
       [targetIdKey]: options.target,
       text: options.text,
-      files: options.files,
+      // Die API erwartet files als JSON-String ("[\"id1\",\"id2\"]"), kein Axios-Array
+      files: options.files ? JSON.stringify(options.files) : undefined,
       url: options.url,
       encrypted: options.encrypted,
       iv: options.iv,

@@ -3,14 +3,14 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import axios from 'axios';
 import { StashcatAPI } from '../api/request';
-import { FileInfo, FolderItem, FolderListOptions, FileUploadOptions, FileQuota } from './types';
+import { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota } from './types';
 
 interface FileInfoResponse {
   file: FileInfo;
 }
 
 interface FolderResponse {
-  items: FolderItem[];
+  content: FolderContent;
 }
 
 interface FileQuotaResponse {
@@ -42,10 +42,10 @@ export class FileManager {
     }
   }
 
-  /** List contents of a folder */
-  async listFolder(options: FolderListOptions = {}): Promise<FolderItem[]> {
+  /** List contents of a folder — returns folders and files separately */
+  async listFolder(options: FolderListOptions = {}): Promise<FolderContent> {
     const data = this.api.createAuthenticatedRequestData({
-      folder_id: options.folder_id,
+      folder_id: options.folder_id ?? '0',
       type: options.type,
       type_id: options.type_id,
       folder_only: options.folder_only,
@@ -56,10 +56,20 @@ export class FileManager {
     });
     try {
       const response = await this.api.post<FolderResponse>('/folder/get', data);
-      return response.items || [];
+      return response.content ?? { folder: [], files: [] };
     } catch (error) {
       throw new Error(`Failed to list folder: ${error instanceof Error ? error.message : error}`);
     }
+  }
+
+  /**
+   * Listet die persönliche Ablage des eingeloggten Nutzers.
+   * Entspricht dem Bereich "Meine Dateien" in der Stashcat-App.
+   *
+   * @param userId Eigene User-ID (von getMe().id)
+   */
+  async listPersonalFiles(userId: string, options: Omit<FolderListOptions, 'type' | 'type_id'> = {}): Promise<FolderContent> {
+    return this.listFolder({ ...options, type: 'personal', type_id: userId });
   }
 
   /** Get storage quota for a channel or conversation */

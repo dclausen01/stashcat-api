@@ -11,7 +11,7 @@ import { User, CompanyMember } from '../users/types';
 import { AccountManager } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileManager } from '../files/files';
-import { FileInfo, FolderItem, FolderListOptions, FileUploadOptions, FileQuota } from '../files/types';
+import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota } from '../files/types';
 import { SecurityManager, PrivateKeyResponse } from '../security/security';
 
 export interface StashcatClientConfig extends StashcatConfig {
@@ -330,9 +330,16 @@ export class StashcatClient {
     return this.files.getFileInfo(fileId);
   }
 
-  async listFolder(options: FolderListOptions = {}): Promise<FolderItem[]> {
+  async listFolder(options: FolderListOptions = {}): Promise<FolderContent> {
     this.requireAuth();
     return this.files.listFolder(options);
+  }
+
+  /** Listet die persönliche Ablage des eingeloggten Nutzers ("Meine Dateien") */
+  async listPersonalFiles(options: Omit<FolderListOptions, 'type' | 'type_id'> = {}): Promise<FolderContent> {
+    this.requireAuth();
+    const me = await this.users.getMe();
+    return this.files.listPersonalFiles(me.id, options);
   }
 
   async deleteFiles(fileIds: string[]): Promise<void> {
