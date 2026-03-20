@@ -1,14 +1,47 @@
+/**
+ * Datei-Metadaten wie sie von /file/info und /file/infos zurückkommen.
+ * Feldnamen entsprechen direkt der API-Response.
+ */
 export interface FileInfo {
   id: string;
   name: string;
-  size: number;
-  mime_type: string;
+  /** Dateigröße als lesbarer String (z. B. "0 kb") */
+  size: string;
+  /** Genaue Größe in Bytes (als String) */
+  size_byte: string;
+  size_string?: string;
+  /** MIME-Typ (API-Feld heißt "mime", nicht "mime_type") */
+  mime: string;
+  /** Dateiendung ohne Punkt */
+  ext?: string;
   encrypted: boolean;
-  e2e_iv?: string;
-  folder_id?: string;
+  e2e_iv?: string | null;
+  /** Ordner-Typ: "channel", "conversation" oder "personal" */
+  folder_type?: string;
+  type_id?: string;
+  virtual_folder?: string | null;
   owner_id?: string;
-  created_at: string;
-  updated_at: string;
+  /** Vollständiges Owner-Objekt (nur bei /file/info) */
+  owner?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    /** Volle URL zum Profilbild, z. B. https://api.stashcat.com/images/profile/{token}.jpg */
+    image?: string;
+    online?: boolean;
+    status?: string;
+  };
+  /** Unix-Timestamp als String */
+  uploaded?: string;
+  /** Unix-Timestamp als String */
+  modified?: string;
+  deleted?: string | null;
+  md5?: string;
+  permission?: string;
+  times_downloaded?: string;
+  last_download?: string | null;
+  dimensions?: { width: number | null; height: number | null };
+  base_64?: string | null;
 }
 
 export interface FolderEntry {
@@ -54,6 +87,7 @@ export interface FolderItem {
 
 export interface FolderContent {
   folder: FolderEntry[];
+  /** Dateien im Ordner (API liefert `file`, wird intern auf `files` gemappt) */
   files: FileEntry[];
 }
 

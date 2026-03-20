@@ -44,19 +44,30 @@ export class FileManager {
 
   /** List contents of a folder — returns folders and files separately */
   async listFolder(options: FolderListOptions = {}): Promise<FolderContent> {
+    const sorting = options.sorting
+      ? JSON.stringify(options.sorting)
+      : JSON.stringify(['created_desc']);
+    const folderOnly = options.folder_only === true ? 'yes' : 'no';
+
     const data = this.api.createAuthenticatedRequestData({
       folder_id: options.folder_id ?? '0',
       type: options.type,
       type_id: options.type_id,
-      folder_only: options.folder_only,
-      offset: options.offset || 0,
-      limit: options.limit || 50,
+      folder_only: folderOnly,
+      offset: options.offset ?? 0,
+      limit: options.limit ?? 75,
       search: options.search,
-      sorting: options.sorting,
+      sorting,
+      fields: '',
     });
     try {
-      const response = await this.api.post<FolderResponse>('/folder/get', data);
-      return response.content ?? { folder: [], files: [] };
+      // API returns payload.content.folder[] and payload.content.file[] (singular)
+      const response = await this.api.post<{ content: { folder: FolderEntry[]; file: FileEntry[] } }>('/folder/get', data);
+      const content = response.content ?? { folder: [], file: [] };
+      return {
+        folder: content.folder ?? [],
+        files: content.file ?? [],   // API uses "file" (singular), we expose it as "files"
+      };
     } catch (error) {
       throw new Error(`Failed to list folder: ${error instanceof Error ? error.message : error}`);
     }

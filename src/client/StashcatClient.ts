@@ -315,7 +315,7 @@ export class StashcatClient {
 
   // ─── Files ───────────────────────────────────────────────────────────────
 
-  async downloadFile(file: File, key?: Buffer): Promise<Buffer> {
+  async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, key?: Buffer): Promise<Buffer> {
     this.requireAuth();
     return this.messages.downloadFile(file, key || this.encryptionKey?.key);
   }

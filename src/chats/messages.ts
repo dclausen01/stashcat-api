@@ -6,9 +6,6 @@ interface MessagesResponse {
   messages: Message[];
 }
 
-interface FileDownloadResponse {
-  data: string;
-}
 
 export interface SendMessageOptions {
   /** Target ID (channel or conversation ID) */
@@ -201,20 +198,16 @@ export class MessageManager {
     }
   }
 
-  /** Download a file, optionally decrypting it */
-  async downloadFile(file: File, key?: Buffer): Promise<Buffer> {
-    const request = this.api.createAuthenticatedRequestData({ id: file.id });
-
+  /** Download a file as a Buffer, optionally decrypting E2E-encrypted content */
+  async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, key?: Buffer): Promise<Buffer> {
     try {
-      const response = await this.api.post<FileDownloadResponse>('/file/download', request);
-      const rawData = Buffer.from(response.data || '', 'base64');
+      // API returns raw binary — file ID goes as ?id= query param, auth in POST body
+      const rawData = await this.api.downloadBinary(file.id);
 
       if (file.encrypted && key) {
         const iv = file.e2e_iv ? CryptoManager.hexToBuffer(file.e2e_iv) : undefined;
-        return Buffer.from(
-          CryptoManager.decrypt(response.data, key, iv || CryptoManager.generateKey().iv),
-          'hex'
-        );
+        const decrypted = CryptoManager.decrypt(rawData.toString('base64'), key, iv || CryptoManager.generateKey().iv);
+        return Buffer.from(decrypted, 'hex');
       }
 
       return rawData;

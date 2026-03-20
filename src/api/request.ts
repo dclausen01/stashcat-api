@@ -81,6 +81,33 @@ export class StashcatAPI {
   }
 
   /**
+   * Download a file as raw binary Buffer.
+   * The file ID is passed as a query parameter (?id=), auth goes in the POST body.
+   */
+  async downloadBinary(fileId: string): Promise<Buffer> {
+    const params = new URLSearchParams({
+      client_key: this.clientKey || '',
+      device_id: this.config.deviceId || '',
+    });
+    try {
+      const response = await this.client.post(
+        this.buildUrl(`/file/download?id=${encodeURIComponent(fileId)}`),
+        params.toString(),
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          responseType: 'arraybuffer',
+        }
+      );
+      return Buffer.from(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Download failed: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Create authenticated request data by automatically adding client_key and device_id
    */
   createAuthenticatedRequestData(additionalData: any): any {
