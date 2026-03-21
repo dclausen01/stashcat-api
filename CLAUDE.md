@@ -7,7 +7,7 @@
 - **Runtime**: Node.js (CommonJS)
 - **Language**: TypeScript 5.4.5, strict mode
 - **HTTP**: Axios with form-urlencoded POST requests
-- **Encryption**: Node.js built-in `crypto` (AES-256-CBC + RSA-2048)
+- **Encryption**: Node.js built-in `crypto` (AES-256-CBC + RSA-4096 OAEP)
 
 ## Development Commands
 
@@ -40,7 +40,7 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 | `RealtimeManager`     | `src/realtime/realtime.ts`     | Socket.io v4 push events from push.stashcat.com                      |
 | `AccountManager`      | `src/account/account.ts`       | Status, password, settings, devices, profile image, notifications     |
 | `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
-| `SecurityManager`     | `src/security/security.ts`     | Private key retrieval, file access keys                               |
+| `SecurityManager`     | `src/security/security.ts`     | RSA private key unlock, conversation AES key decryption, cache       |
 | `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-2048, encoding utilities                     |
 
 ### Request Flow
@@ -296,14 +296,84 @@ STASHCAT_APP_NAME=stashcat-api-client
 STASHCAT_DEVICE_ID=                           # Optional; auto-generated if omitted
 ```
 
-## Encryption Notes
+## E2E Encryption (live-verified 2026-03-21)
 
-- AES session key auto-generated on `client.login()` via `CryptoManager.generateKey()`
-- Messages are decrypted transparently in `MessageManager.getMessages()` when `encrypted: true`
-- Key is cleared on `client.logout()`
+### Key Structure
+
+Stashcat uses RSA-4096 + AES-256-CBC:
+
+1. Each user has an RSA-4096 keypair. The **encrypted** private key is stored server-side.
+2. Each encrypted conversation has a **per-conversation AES-256 key** — RSA-OAEP encrypted
+   with the user's public key, stored in `conversation.key` (base64).
+3. Each message is AES-256-CBC encrypted: `text` (hex ciphertext), `iv` (hex IV).
+
+### `/security/get_private_key` Response
+
+```typescript
+// Actual API shape (was previously wrong in the codebase):
+{
+  payload: {
+    keys: {
+      user_id: string;
+      type: "encryption";
+      format: "pem";
+      // JSON-encoded string: { "private": "-----BEGIN ENCRYPTED PRIVATE KEY-----..." }
+      private_key: string;
+      public_key?: string;
+      // ...
+    }
+  }
+}
+```
+
+The private key PEM is a **PKCS#8 PBES2** encrypted key — Node.js decrypts it natively:
+```typescript
+crypto.createPrivateKey({ key: pem, format: 'pem', passphrase: Buffer.from(securityPassword, 'utf8') })
+```
+
+### Conversation Key
+
+`conversation.key` (base64, 512 bytes = RSA-4096 output):
+```typescript
+crypto.privateDecrypt({ key: rsaPrivateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, encryptedKeyBuffer)
+// → 32-byte AES key Buffer
+```
+
+### Full Decryption Flow
+
+```typescript
+// 1. Login + auto-unlock E2E (security password often == login password)
+await client.login({
+  email, password,
+  securityPassword: password,  // or set separately
+});
+
+// 2. Messages decrypted automatically
+const messages = await client.getMessages(conversationId, 'conversation');
+// → messages[].text is plaintext
+
+// 3. Manual unlock (if not passed to login)
+await client.unlockE2E(securityPassword);
+console.log(client.isE2EUnlocked()); // true
+
+// 4. Get AES key for a conversation
+const aesKey = await client.getConversationAesKey(conversationId); // Buffer (32 bytes)
+```
+
+### SecurityManager API
+
+- `unlockPrivateKey(securityPassword)` — fetches RSA key from server, decrypts with passphrase
+- `isUnlocked()` — returns true if RSA key is available
+- `decryptConversationKey(base64key, cacheId?)` — RSA-OAEP → 32-byte AES key (cached)
+- `clearKeyCache()` — clears RSA key + AES key cache (called on logout)
+
+### Notes
+
+- Security password is **often identical** to the login password (Stashcat default)
+- AES key cache: `Map<conversationId, Buffer>` — RSA decryption happens once per conversation
+- Session serialization does **not** persist the RSA private key (security) — call `unlockE2E()` again after `fromSession()`
 - `CryptoManager` is fully static — never instantiate it
 - File upload encryption: provide `encrypted: true` and `iv` (hex) in `FileUploadOptions`
-- `SecurityManager.getPrivateKey()` retrieves the server-stored RSA private key for E2E flows
 
 ## Session Persistence (for Nextcloud plugin)
 
@@ -312,7 +382,7 @@ This is essential for Nextcloud plugins where each HTTP request creates a new PH
 
 ```typescript
 // After login: serialize and store in Nextcloud DB
-const session = client.serialize(); // { deviceId, clientKey, encryptionKeyHex, encryptionIvHex }
+const session = client.serialize(); // { deviceId, clientKey, baseUrl? }
 await db.set("stashcat_session_" + userId, JSON.stringify(session));
 
 // On next request: restore without re-login
@@ -329,14 +399,18 @@ await client.getConversations(); // works immediately
 interface SerializedSession {
   deviceId: string;
   clientKey: string;
-  encryptionKeyHex?: string; // AES key as hex
-  encryptionIvHex?: string; // AES IV as hex
   baseUrl?: string; // optional, can be set during fromSession()
 }
 ```
 
 Internally, `AuthManager.restoreSession(clientKey)` sets the auth state and injects the
 `client_key` into `StashcatAPI` without a network call.
+
+**E2E after restore**: E2E unlock state is NOT serialized. Call `unlockE2E()` again:
+```typescript
+const client = StashcatClient.fromSession(session, { baseUrl });
+await client.unlockE2E(securityPassword);  // required for E2E decryption
+```
 
 ## Realtime / Socket.io
 
