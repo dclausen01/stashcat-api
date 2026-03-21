@@ -28,3 +28,7 @@ export { SecurityManager, PrivateKeyResponse } from './security/security';
 
 // Encryption
 export { CryptoManager, EncryptionKey } from './encryption/crypto';
+
+// Realtime
+export { RealtimeManager } from './realtime/realtime';
+export { RealtimeEvents, MessageSyncPayload, RealtimeManagerOptions } from './realtime/types';

@@ -13,6 +13,8 @@ import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileManager } from '../files/files';
 import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota } from '../files/types';
 import { SecurityManager, PrivateKeyResponse } from '../security/security';
+import { RealtimeManager } from '../realtime/realtime';
+import { RealtimeManagerOptions } from '../realtime/types';
 
 export interface StashcatClientConfig extends StashcatConfig {
   email?: string;
@@ -409,6 +411,34 @@ export class StashcatClient {
   async getPrivateKey(): Promise<PrivateKeyResponse> {
     this.requireAuth();
     return this.security.getPrivateKey();
+  }
+
+  // ─── Realtime ─────────────────────────────────────────────────────────────
+
+  /**
+   * Erstellt einen RealtimeManager für Push-Events via Socket.io.
+   * Holt automatisch die `socket_id` (hidden_id) des Users für den Auth-Handshake.
+   * Die Verbindung wird NICHT automatisch aufgebaut — rufe `rt.connect()` auf.
+   *
+   * Auth-Flow: nach connect → emit('userid', { hidden_id: socket_id, device_id, client_key })
+   *
+   * @example
+   * const rt = await client.createRealtimeManager({ debug: true });
+   * await rt.connect();
+   * rt.on('message_sync', (data) => console.log('Neue Nachricht!', data));
+   * rt.on('new_device_connected', () => console.log('Auth OK!'));
+   */
+  async createRealtimeManager(options: RealtimeManagerOptions = {}): Promise<RealtimeManager> {
+    this.requireAuth();
+    const clientKey = this.auth.getClientKey();
+    const deviceId = this.api.getDeviceId();
+    if (!clientKey) throw new Error('Kein client_key — bitte erst einloggen.');
+
+    // socket_id (= hidden_id für Auth-Emit) aus /users/me laden
+    const me = await this.users.getMe();
+    const hiddenId = me.socket_id ?? '';
+
+    return new RealtimeManager(clientKey, deviceId, hiddenId, options);
   }
 
   // ─── Internal ────────────────────────────────────────────────────────────

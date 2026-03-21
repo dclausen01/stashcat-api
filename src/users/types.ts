@@ -6,6 +6,8 @@ export interface User {
   status?: string;
   avatar?: string;
   public_key?: string;
+  socket_id?: string;   // Used as hidden_id for Socket.io auth (emit 'userid' event)
+  quota?: number;
   created_at: string;
   updated_at: string;
 }
