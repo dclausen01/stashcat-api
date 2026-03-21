@@ -287,14 +287,16 @@ export class StashcatClient {
 
     if (this.security.isUnlocked()) {
       if (chatType === 'conversation') {
-        // Fetch the conversation to get its encrypted AES key
         const conv = await this.conversations.getConversation(id);
         if (conv.encrypted && conv.key) {
           aesKey = this.security.decryptConversationKey(conv.key, id);
         }
+      } else if (chatType === 'channel') {
+        const ch = await this.channels.getChannelInfo(id, true);
+        if (ch.encrypted && ch.key) {
+          aesKey = this.security.decryptConversationKey(ch.key, `channel_${id}`);
+        }
       }
-      // Channel E2E keys follow the same mechanism — channels have a 'key' field too.
-      // Handled below if a Channel object is passed via options.
     }
 
     return this.messages.getMessages(id, chatType, {

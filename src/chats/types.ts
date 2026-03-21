@@ -17,6 +17,16 @@ export interface Channel {
   last_message?: Message;
   favorite?: boolean;
   member_count?: number;
+  /**
+   * RSA-OAEP encrypted AES key (base64) for this channel.
+   * Same mechanism as Conversation.key — decrypt with RSA private key to get 32-byte AES key.
+   * null for non-encrypted channels.
+   */
+  key?: string | null;
+  key_requested?: string | null;
+  key_signature?: string | null;
+  key_sender?: number | null;
+  signature_expiry?: string | null;
 }
 
 export interface ChannelMember {
