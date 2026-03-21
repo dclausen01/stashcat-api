@@ -36,7 +36,8 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 | `ChannelManager`      | `src/chats/channels.ts`        | Full channel lifecycle (CRUD, members, moderation, invites)           |
 | `ConversationManager` | `src/chats/conversations.ts`   | Conversations (list, create, archive, favorites)                      |
 | `MessageManager`      | `src/chats/messages.ts`        | Messages (read, send, delete, like, flag) + file download             |
-| `UserManager`         | `src/users/users.ts`           | Own profile, user info by ID, company members                         |
+| `UserManager`         | `src/users/users.ts`           | Own profile, user info by ID, company members, company discovery      |
+| `RealtimeManager`     | `src/realtime/realtime.ts`     | Socket.io v4 push events from push.stashcat.com                      |
 | `AccountManager`      | `src/account/account.ts`       | Status, password, settings, devices, profile image, notifications     |
 | `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
 | `SecurityManager`     | `src/security/security.ts`     | Private key retrieval, file access keys                               |
@@ -128,11 +129,12 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 
 ### Users & Company
 
-| Endpoint          | Method                |
-| ----------------- | --------------------- |
-| `/users/me`       | `getMe()`             |
-| `/users/info`     | `getUserInfo()`       |
-| `/company/member` | `getCompanyMembers()` |
+| Endpoint           | Method                                                          |
+| ------------------ | --------------------------------------------------------------- |
+| `/users/me`        | `getMe()`                                                       |
+| `/users/info`      | `getUserInfo()`                                                  |
+| `/company/member`  | `getCompanies()` (without company_id) / `getCompanyMembers()`   |
+| `/company/details` | `getCompanyDetails()`                                            |
 
 ### Account
 
@@ -161,6 +163,10 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | `/push/enable_notifications`  | `ChannelManager / ConversationManager` |
 | `/push/disable_notifications` | `ChannelManager / ConversationManager` |
 
+### Realtime (Socket.io)
+
+Push events are delivered via Socket.io v4 at `push.stashcat.com` — see [Realtime / Socket.io](#realtime--socketio) below.
+
 ## Key Files
 
 ```
@@ -176,13 +182,16 @@ src/
 │   ├── channels.ts            # ChannelManager (full CRUD + moderation)
 │   ├── conversations.ts       # ConversationManager
 │   ├── messages.ts            # MessageManager + file download + markAsRead
-│   └── types.ts               # Channel, Conversation, Message, MessageFile, File, PaginationOptions
+│   └── types.ts               # Channel, Conversation, Message, MessageFile, PaginationOptions
 ├── client/
 │   └── StashcatClient.ts      # Main facade — primary entry point for consumers
                                 # Incl. serialize() / fromSession() for Nextcloud session persistence
+├── realtime/
+│   ├── realtime.ts            # RealtimeManager — Socket.io v4 push events
+│   └── types.ts               # RealtimeEvents, MessageSyncPayload, RealtimeManagerOptions
 ├── users/
-│   ├── users.ts               # UserManager
-│   └── types.ts               # User, CompanyMember
+│   ├── users.ts               # UserManager + company discovery (getCompanies, getCompanyDetails)
+│   └── types.ts               # User, Company, CompanyMember
 ├── account/
 │   ├── account.ts             # AccountManager
 │   └── types.ts               # AccountSettings, ActiveDevice, Notification
@@ -329,80 +338,207 @@ interface SerializedSession {
 Internally, `AuthManager.restoreSession(clientKey)` sets the auth state and injects the
 `client_key` into `StashcatAPI` without a network call.
 
+## Realtime / Socket.io
+
+### Overview
+
+`RealtimeManager` connects to `push.stashcat.com` via Socket.io v4 for real-time push events
+(new messages, typing indicators, online status, channel changes, etc.).
+
+- **Dependency**: `socket.io-client` v4
+- **Transport**: WebSocket (primary) + HTTP long-polling (fallback)
+- **Server**: `https://push.stashcat.com`
+
+### Auth Flow (reverse-engineered from schul.cloud Angular bundle)
+
+The auth flow was discovered by reverse-engineering the production Angular bundle (`chunk-6A7IIHB3.js`).
+This is critical — no credentials are passed in the connection options.
+
+1. Connect to `push.stashcat.com` with **no auth in query/headers**
+2. After `'connect'` event: emit `'userid'` with `{ hidden_id, device_id, client_key }`
+   - `hidden_id` = `socket_id` field from `/users/me` API response
+   - `device_id` = the device ID used for REST API calls
+   - `client_key` = the session key from login
+3. Server responds with `'new_device_connected'` event → events start flowing
+4. On reconnect: re-emit `'userid'` with the same credentials
+
+```typescript
+// Usage
+const rt = await client.createRealtimeManager({ debug: true });
+await rt.connect();
+rt.on('message_sync', (data) => console.log('New message:', data));
+rt.on('user-started-typing', (chatType, chatId, userId) => { /* ... */ });
+rt.sendTyping('channel', channelId);  // emit typing indicator
+rt.disconnect();
+```
+
+`createRealtimeManager()` is **async** — it calls `getMe()` internally to fetch `socket_id`.
+
+### Live-verified Events
+
+These events have been confirmed via live testing against schul.cloud (2026-03-21):
+
+| Event                    | Payload                                                                   | Notes                                  |
+| ------------------------ | ------------------------------------------------------------------------- | -------------------------------------- |
+| `new_device_connected`   | `{ device_id: string, ip_address: string }`                              | Auth confirmation                      |
+| `message_sync`           | `MessageSyncPayload` (30+ fields, identical to REST `/message/content`)  | New/updated messages                   |
+| `user-started-typing`    | `(chatType: string, chatId: number, userId: number)`                     | Typing indicator                       |
+| `device_disconnected`    | `{ device_id: string }`                                                  | Another connection for this device     |
+| `online_status_change`   | `unknown`                                                                | User went online/offline               |
+| `channel_modified`       | `unknown`                                                                | Channel metadata changed               |
+| `channel_created`        | `unknown`                                                                | New channel                            |
+| `channel_deleted`        | `unknown`                                                                | Channel removed                        |
+| `message_read`           | `unknown`                                                                | Message marked as read                 |
+| `notification`           | `unknown`                                                                | Push notification                      |
+
+Additional events discovered from the Angular bundle (not yet live-verified):
+`channel_membership_gained`, `channel_membership_lost`, `object_change`, `file_change`,
+`new_invite`, `new_login`, `call_created`, `call_changed`,
+`key_sync_request`, `key_sync_payload`, `key_sync_abort`,
+`send_encrypted_data_to_device`, `encrypted_data_from_device`,
+`device_to_device_message`, `one_time_key_claimed`, `new_mx_device`, `removed_mx_device`.
+
+### Typing Indicator
+
+Emit: `socket.emit('started-typing', chatType, chatId)`
+Receive: `'user-started-typing'` event with `(chatType, chatId, userId)`
+
+Note the asymmetry: emit uses `'started-typing'`, receive uses `'user-started-typing'`.
+
+### MessageSyncPayload
+
+The `message_sync` payload is a full message object (see `src/realtime/types.ts`). Key fields:
+
+- `id`, `text`, `sender`, `time`, `micro_time`
+- `conversation_id` (0 if channel message) / `channel_id` (0 if conversation message)
+- `encrypted`, `iv` — for E2E decryption
+- `files`, `likes`, `liked`, `flagged`, `is_forwarded`, `reactions`
+- `reciever` (note: API has a typo, not `receiver`)
+
+## Company Discovery
+
+### Endpoints (live-verified)
+
+| Endpoint           | Parameters     | Returns                        | Notes                                            |
+| ------------------ | -------------- | ------------------------------ | ------------------------------------------------ |
+| `/company/member`  | *(none)*       | `{ companies: Company[] }`     | All companies the user belongs to                |
+| `/company/details` | `company_id`   | `{ company: Company }`         | Detailed info for a single company               |
+
+**Important:** `/company/get` and `/company/info` do **NOT** exist (return 404). Only the endpoints above work.
+
+`/company/member` has dual behavior:
+- **Without** `company_id` → returns `payload.companies[]` (company discovery via `getCompanies()`)
+- **With** `company_id` → returns `payload.members[]` (member listing via `getCompanyMembers()`)
+
+### Company Interface
+
+```typescript
+interface Company {
+  id: string;
+  name: string;
+  quota?: number;            // Storage quota in some unit
+  quota_byte?: number;
+  max_users?: number;
+  users?: number;            // Can be { created: number, active: number } object in detail response
+  features?: string[];       // e.g. ["managed-channels", "marketplace"]
+  marketplace_modules?: string[];  // e.g. ["calendar", "survey", "voip", "sync", ...]
+  domains?: string[];        // e.g. ["snrd.local", "bbz-rd-eck.de"]
+  roles?: Array<{ id: string; name: string; editable?: boolean }>;
+  permission?: string[];
+  // ... see src/users/types.ts for full interface
+}
+```
+
+## Live-verified API Behaviors
+
+The following behaviors have been confirmed via live testing against schul.cloud:
+
+### File Download
+
+- **URL format**: `GET {baseUrl}/file/download?device_id={deviceId}&client_key={clientKey}&file_id={fileId}`
+- **Response**: Raw binary data (not base64)
+- **Decryption**: Binary → hex string → `CryptoManager.decrypt(hexString, key, iv)`
+- **IV source**: `file.e2e_iv` field — must be present for encrypted files (throws if missing)
+
+### Folder Listing
+
+- **Endpoint**: POST `/folder/get`
+- **Required params**: `type` (e.g. `'channel'`, `'conversation'`, `'user'`) + `type_id`
+- **Personal files**: Use `type: 'user'` with `type_id` = user's own ID
+- **Response**: `{ folders: FolderEntry[], files: FileEntry[] }`
+
+### Conversations Sorting
+
+- `sorting` parameter must be JSON-serialized: `JSON.stringify(options.sorting)`
+- Passing a raw array causes the API to ignore the sorting
+
+### Device ID Generation
+
+- Uses `crypto.randomBytes(16).toString('hex')` (32 hex chars)
+- Old implementation used `Math.random()` which was insecure and non-unique
+
 ## Extended Type Definitions
 
 ### Message (src/chats/types.ts)
 
-New optional fields added to match actual API responses:
+Fields confirmed via live `message_sync` events and REST API:
 
 - `files?: MessageFile[]` — attached files
 - `reply_to_id?: string` — ID of the message being replied to
 - `likes?: number` — number of likes
 - `liked?: boolean` — whether the current user liked this message
 - `flagged?: boolean` — whether the current user flagged this message
-- `edited?: boolean` — whether the message was edited
+- `edited?: boolean` — whether the message has been edited
+- `time?: number` — Unix timestamp (seconds)
+- `micro_time?: number` — microsecond precision timestamp
+- `kind?: string` — e.g. `'text'`
+- `type?: string` — message type
+- `seen_by_others?: boolean`, `unread?: boolean`
+- `is_forwarded?: boolean`, `has_file_attached?: boolean`
+- `alarm?: boolean`, `confirmation_required?: boolean`
+- `thread_id?: string`, `is_deleted_by_manager?: boolean`
+- `reactions?: unknown[]`, `channel?: unknown`, `broadcast?: unknown`
 
 ### MessageFile (src/chats/types.ts)
 
-New interface for file attachments in messages:
+Live-verified fields — note the API uses `mime` not `mime_type`, and `size_string`/`size_byte` not `size`:
 
 ```typescript
 interface MessageFile {
   id: string;
   name: string;
-  size: number;
-  mime_type: string;
+  size_string?: string;    // e.g. "63 kb"
+  size_byte?: string;      // e.g. "63000"
+  mime?: string;           // MIME type (API field is "mime", not "mime_type")
+  ext?: string;            // file extension without dot
   encrypted?: boolean;
+  e2e_iv?: string | null;  // AES IV for decryption
+  folder_type?: string;    // e.g. "channel", "conversation"
+  owner_id?: string;
+  md5?: string;
 }
 ```
 
-### Conversation (src/chats/types.ts)
+### Channel (src/chats/types.ts)
 
-New optional fields:
+Extended with +11 fields from live API responses:
 
-- `unread_count?: number` — unread message count (likely present in API response)
-- `archived?: boolean`
-- `is_favorite?: boolean`
-- `encrypted?: boolean`
+- `type?: string` — channel type
+- `visible?: boolean`, `writable?: boolean`, `encrypted?: boolean`, `inviteable?: boolean`
+- `owner_id?: string`, `image?: string`
+- `unread_count?: number`, `last_message?: Message`
+- `favorite?: boolean`, `member_count?: number`
 
-## Extended Method Signatures
+### User (src/users/types.ts)
 
-### getMessages()
+Extended with +11 fields from live `/users/me` response:
 
-```typescript
-getMessages(
-  id: string,
-  chatType: 'channel' | 'conversation',
-  options: { limit?: number; offset?: number; after_message_id?: string } = {}
-): Promise<Message[]>
-```
-
-`after_message_id` — fetch only messages newer than the given ID (for polling).
-**Note:** Whether the Stashcat API actually supports this parameter needs verification via API test.
-
-### sendMessage()
-
-```typescript
-interface SendMessageOptions {
-  // ... existing fields ...
-  reply_to_id?: string; // NEW: reply to a specific message
-}
-```
-
-**Note:** Whether `/message/send` accepts `reply_to_id` needs verification via API test.
-
-### markAsRead()
-
-```typescript
-markAsRead(
-  id: string,
-  chatType: 'channel' | 'conversation',
-  messageId: string   // ID of the newest message to mark as read
-): Promise<void>
-```
-
-Calls `/message/mark_read`. **Note:** Exact endpoint name needs verification — alternatives:
-`/message/mark_as_read`, `/message/read`.
+- `socket_id?: string` — **critical**: used as `hidden_id` for Socket.io auth
+- `online?: boolean`, `allows_voip_calls?: boolean`, `mx_user_id?: string`
+- `language?: string`, `image?: string`
+- `roles?: Array<{ id: string; name: string; company_id: string }>`
+- `permissions?: string[]`, `is_bot?: boolean`
+- `last_login?: string`, `totp_active?: boolean`
 
 ## Known API Limitations (confirmed)
 
@@ -410,6 +546,8 @@ Calls `/message/mark_read`. **Note:** Exact endpoint name needs verification —
 - **No `deleteConversation()`** — Conversations can only be archived (`archiveConversation()`), not deleted.
 - **No emoji reactions** — Stashcat does not support emoji reactions; only like/unlike is available.
 - **No message search** — No `/message/search` endpoint known.
+- **No `/company/get` or `/company/info`** — Only `/company/member` and `/company/details` work.
+- **`reciever` typo** — The API spells it `reciever` (not `receiver`) in message payloads.
 
 ## Known Gaps (not yet implemented)
 
@@ -420,3 +558,4 @@ Calls `/message/mark_read`. **Note:** Exact endpoint name needs verification —
 - Full E2E key exchange for multi-participant conversations (key distribution flow)
 - Auto-reconnect on session expiry
 - Multi-user session pool (needed for Nextcloud: one `StashcatClient` per Nextcloud user)
+- Full typing of all Socket.io event payloads (many are still `unknown`)
