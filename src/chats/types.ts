@@ -29,20 +29,49 @@ export interface ChannelMember {
 
 export interface Conversation {
   id: string;
-  type: 'direct' | 'group';
+  type?: 'direct' | 'group';
   name?: string;
-  participants: ConversationParticipant[];
+  participants?: ConversationParticipant[];
   last_message?: Message;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  /** Unix timestamp of creation */
+  created?: string;
+  /** Unix timestamp of last action */
+  last_action?: string;
+  last_activity?: string;
   /** Number of unread messages in this conversation */
   unread_count?: number;
+  unread_messages?: number;
   /** Whether the conversation is archived */
   archived?: boolean;
+  archive?: boolean | null;
   /** Whether the conversation is a favorite */
   is_favorite?: boolean;
+  favorite?: boolean;
   /** Whether the conversation is encrypted */
   encrypted?: boolean;
+  /**
+   * RSA-OAEP encrypted AES key (base64) for this conversation.
+   * Decrypt with the user's RSA private key to get the 32-byte AES session key.
+   * Then use that key to decrypt individual messages.
+   */
+  key?: string | null;
+  /** Key request state */
+  key_requested?: string | null;
+  /** Signature of the conversation key */
+  key_signature?: string | null;
+  /** User ID who sent the key */
+  key_sender?: number | null;
+  signature_expiry?: string | null;
+  /** Unique identifier for key material (hex) */
+  unique_identifier?: string | null;
+  deleted?: string | null;
+  muted?: boolean | null;
+  user_count?: number;
+  members?: unknown[];
+  num_members_without_keys?: number;
+  is_marked_as_unread?: boolean;
 }
 
 export interface ConversationParticipant {

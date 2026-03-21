@@ -24,10 +24,10 @@ export { FileManager } from './files/files';
 export { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota, FileStorageType } from './files/types';
 
 // Security
-export { SecurityManager, PrivateKeyResponse } from './security/security';
+export { SecurityManager, PrivateKeyResponse, EncryptionKeyData } from './security/security';
 
-// Encryption
-export { CryptoManager, EncryptionKey } from './encryption/crypto';
+// Encryption (EncryptionKey removed — no longer used internally)
+export { CryptoManager } from './encryption/crypto';
 
 // Realtime
 export { RealtimeManager } from './realtime/realtime';

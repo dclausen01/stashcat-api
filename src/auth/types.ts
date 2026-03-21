@@ -23,6 +23,12 @@ export interface AuthConfig {
   email: string;
   password: string;
   appName?: string;
+  /**
+   * Security/encryption password for E2E decryption.
+   * If provided, unlockE2E() is called automatically after login.
+   * May be identical to the login password (Stashcat default).
+   */
+  securityPassword?: string;
   encrypted?: boolean;
   callable?: boolean;
   keyTransferSupport?: boolean;

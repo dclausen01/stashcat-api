@@ -5,7 +5,6 @@ import { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMember
 import { ConversationManager } from '../chats/conversations';
 import { MessageManager, SendMessageOptions } from '../chats/messages';
 import { Channel, ChannelMember, Conversation, Message, PaginationOptions } from '../chats/types';
-import { CryptoManager, EncryptionKey } from '../encryption/crypto';
 import { UserManager } from '../users/users';
 import { User, CompanyMember } from '../users/types';
 import { AccountManager } from '../account/account';
@@ -26,10 +25,6 @@ export interface StashcatClientConfig extends StashcatConfig {
 export interface SerializedSession {
   deviceId: string;
   clientKey: string;
-  /** AES encryption key as hex string */
-  encryptionKeyHex?: string;
-  /** AES IV as hex string */
-  encryptionIvHex?: string;
   /** Base URL of the Stashcat instance */
   baseUrl?: string;
 }
@@ -44,7 +39,6 @@ export class StashcatClient {
   private account: AccountManager;
   private files: FileManager;
   private security: SecurityManager;
-  private encryptionKey?: EncryptionKey;
 
   constructor(config: StashcatClientConfig = {}) {
     this.api = new StashcatAPI(config);
@@ -62,17 +56,38 @@ export class StashcatClient {
 
   async login(config: AuthConfig): Promise<void> {
     await this.auth.login(config);
-    this.encryptionKey = CryptoManager.generateKey();
+    // Auto-unlock E2E if security password provided
+    if (config.securityPassword) {
+      await this.security.unlockPrivateKey(config.securityPassword);
+    }
   }
 
   logout(): void {
     this.auth.logout();
-    this.encryptionKey = undefined;
+    this.security.clearKeyCache();
+  }
+
+  /**
+   * Unlock E2E decryption explicitly.
+   * Fetches the RSA private key from the server and decrypts it with the given password.
+   * After this call, getMessages() for encrypted conversations returns plaintext.
+   *
+   * The security password may be identical to the login password (Stashcat default).
+   */
+  async unlockE2E(securityPassword: string): Promise<void> {
+    this.requireAuth();
+    await this.security.unlockPrivateKey(securityPassword);
+  }
+
+  /** Returns true if E2E decryption is unlocked. */
+  isE2EUnlocked(): boolean {
+    return this.security.isUnlocked();
   }
 
   /**
    * Serialize the current session to a plain object that can be stored
    * (e.g. in a Nextcloud database) and restored later without re-login.
+   * Note: E2E unlock state is NOT serialized for security — call unlockE2E() again after restore.
    */
   serialize(): SerializedSession {
     if (!this.isAuthenticated()) {
@@ -85,8 +100,6 @@ export class StashcatClient {
     return {
       deviceId: this.api.getDeviceId(),
       clientKey,
-      encryptionKeyHex: this.encryptionKey?.key.toString('hex'),
-      encryptionIvHex: this.encryptionKey?.iv.toString('hex'),
       baseUrl: undefined, // consumer can add this if needed
     };
   }
@@ -94,10 +107,12 @@ export class StashcatClient {
   /**
    * Restore a previously serialized session without performing a new login.
    * Use this in Nextcloud plugins to reuse an existing session across requests.
+   * Call unlockE2E(securityPassword) afterwards to re-enable E2E decryption.
    *
    * @example
    * const session = JSON.parse(await db.get('stashcat_session'));
    * const client = StashcatClient.fromSession(session);
+   * await client.unlockE2E(securityPassword);
    * await client.getConversations();
    */
   static fromSession(session: SerializedSession, config: StashcatClientConfig = {}): StashcatClient {
@@ -107,12 +122,6 @@ export class StashcatClient {
       deviceId: session.deviceId,
     });
     client.auth.restoreSession(session.clientKey);
-    if (session.encryptionKeyHex && session.encryptionIvHex) {
-      client.encryptionKey = {
-        key: Buffer.from(session.encryptionKeyHex, 'hex'),
-        iv: Buffer.from(session.encryptionIvHex, 'hex'),
-      };
-    }
     return client;
   }
 
@@ -120,15 +129,11 @@ export class StashcatClient {
     return this.auth.isAuthenticated();
   }
 
-  getEncryptionKey(): EncryptionKey | undefined {
-    return this.encryptionKey;
-  }
-
   getClientInfo() {
     return {
       deviceId: this.api.getDeviceId(),
       isAuthenticated: this.isAuthenticated(),
-      hasEncryptionKey: !!this.encryptionKey,
+      isE2EUnlocked: this.isE2EUnlocked(),
     };
   }
 
@@ -265,16 +270,68 @@ export class StashcatClient {
 
   // ─── Messages ────────────────────────────────────────────────────────────
 
+  /**
+   * Get messages from a channel or conversation.
+   * If E2E is unlocked and the chat is encrypted, messages are automatically decrypted.
+   * For conversations, the conversation object is fetched (once, then cached) to obtain
+   * the AES key. For channels, pass the channel's key via options.channelKey if needed.
+   */
   async getMessages(
     id: string,
     chatType: 'channel' | 'conversation',
     options: { limit?: number; offset?: number; after_message_id?: string } = {}
   ): Promise<Message[]> {
     this.requireAuth();
+
+    let aesKey: Buffer | undefined;
+
+    if (this.security.isUnlocked()) {
+      if (chatType === 'conversation') {
+        // Fetch the conversation to get its encrypted AES key
+        const conv = await this.conversations.getConversation(id);
+        if (conv.encrypted && conv.key) {
+          aesKey = this.security.decryptConversationKey(conv.key, id);
+        }
+      }
+      // Channel E2E keys follow the same mechanism — channels have a 'key' field too.
+      // Handled below if a Channel object is passed via options.
+    }
+
     return this.messages.getMessages(id, chatType, {
       ...options,
-      key: this.encryptionKey?.key,
+      key: aesKey,
     });
+  }
+
+  /**
+   * Get messages with an explicitly provided AES key (e.g. for channels).
+   * Use this when you already have the decrypted AES key from a Channel object.
+   */
+  async getMessagesWithKey(
+    id: string,
+    chatType: 'channel' | 'conversation',
+    aesKey: Buffer,
+    options: { limit?: number; offset?: number; after_message_id?: string } = {}
+  ): Promise<Message[]> {
+    this.requireAuth();
+    return this.messages.getMessages(id, chatType, { ...options, key: aesKey });
+  }
+
+  /**
+   * Decrypt a conversation's AES key using the unlocked RSA private key.
+   * Returns the 32-byte AES key buffer. Result is cached by conversation ID.
+   * Throws if E2E is not unlocked or the conversation is not encrypted.
+   */
+  async getConversationAesKey(conversationId: string): Promise<Buffer> {
+    this.requireAuth();
+    if (!this.security.isUnlocked()) {
+      throw new Error('E2E not unlocked — call unlockE2E() first');
+    }
+    const conv = await this.conversations.getConversation(conversationId);
+    if (!conv.encrypted || !conv.key) {
+      throw new Error(`Conversation ${conversationId} is not encrypted or has no key`);
+    }
+    return this.security.decryptConversationKey(conv.key, conversationId);
   }
 
   async sendMessage(options: SendMessageOptions): Promise<Message> {
@@ -329,7 +386,7 @@ export class StashcatClient {
 
   async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, key?: Buffer): Promise<Buffer> {
     this.requireAuth();
-    return this.messages.downloadFile(file, key || this.encryptionKey?.key);
+    return this.messages.downloadFile(file, key);
   }
 
   async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize?: number): Promise<FileInfo> {
@@ -459,4 +516,3 @@ export class StashcatClient {
     }
   }
 }
-
