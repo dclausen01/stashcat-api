@@ -6,6 +6,17 @@ export interface Channel {
   created_at: string;
   updated_at: string;
   members: ChannelMember[];
+  type?: string;
+  visible?: boolean;
+  writable?: boolean;
+  encrypted?: boolean;
+  inviteable?: boolean;
+  owner_id?: string;
+  image?: string;
+  unread_count?: number;
+  last_message?: Message;
+  favorite?: boolean;
+  member_count?: number;
 }
 
 export interface ChannelMember {
@@ -90,6 +101,28 @@ export interface Message {
   flagged?: boolean;
   /** Whether the message has been edited */
   edited?: boolean;
+  /** Unix timestamp in seconds */
+  time?: number;
+  /** Microsecond-precision timestamp */
+  micro_time?: number;
+  /** Message kind (e.g. 'text') */
+  kind?: string;
+  /** Message type */
+  type?: string;
+  location?: unknown;
+  tags?: unknown[];
+  links?: unknown[];
+  seen_by_others?: boolean;
+  unread?: boolean;
+  is_forwarded?: boolean;
+  reactions?: unknown[];
+  channel?: unknown;
+  broadcast?: unknown;
+  alarm?: boolean;
+  confirmation_required?: boolean;
+  thread_id?: string;
+  is_deleted_by_manager?: boolean;
+  has_file_attached?: boolean;
 }
 
 export interface MessageSender {
@@ -99,17 +132,6 @@ export interface MessageSender {
   first_name?: string;
   last_name?: string;
   email?: string;
-}
-
-export interface File {
-  id: string;
-  name: string;
-  size: number;
-  mime_type: string;
-  encrypted: boolean;
-  e2e_iv?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface PaginationOptions {

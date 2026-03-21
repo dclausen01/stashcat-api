@@ -4,7 +4,7 @@ import { AuthConfig } from '../auth/types';
 import { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from '../chats/channels';
 import { ConversationManager } from '../chats/conversations';
 import { MessageManager, SendMessageOptions } from '../chats/messages';
-import { Channel, ChannelMember, Conversation, Message, File, PaginationOptions } from '../chats/types';
+import { Channel, ChannelMember, Conversation, Message, PaginationOptions } from '../chats/types';
 import { CryptoManager, EncryptionKey } from '../encryption/crypto';
 import { UserManager } from '../users/users';
 import { User, CompanyMember } from '../users/types';
@@ -142,6 +142,16 @@ export class StashcatClient {
   async getUserInfo(userId: string, withKey = true): Promise<User> {
     this.requireAuth();
     return this.users.getUserInfo(userId, withKey);
+  }
+
+  async getCompanies(): Promise<import('../users/types').Company[]> {
+    this.requireAuth();
+    return this.users.getCompanies();
+  }
+
+  async getCompanyDetails(companyId: string): Promise<import('../users/types').Company> {
+    this.requireAuth();
+    return this.users.getCompanyDetails(companyId);
   }
 
   async getCompanyMembers(companyId: string, noCache = false): Promise<CompanyMember[]> {

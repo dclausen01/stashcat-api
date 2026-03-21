@@ -195,8 +195,7 @@ export class FileManager {
       formData.append('file', blob, filename);
 
       try {
-        const baseUrl = (this.api as unknown as { config: { baseUrl: string } }).config?.baseUrl
-          || 'https://api.stashcat.com/';
+        const baseUrl = this.api.getBaseUrl();
         const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload` : `${baseUrl}/file/upload`;
 
         const res = await axios.post(url, formData, {

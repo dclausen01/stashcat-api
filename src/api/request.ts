@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import * as crypto from 'crypto';
 import { APIResponse } from './response';
 
 export interface StashcatConfig {
@@ -30,9 +31,7 @@ export class StashcatAPI {
   }
 
   private generateDeviceId(): string {
-    return Array.from({ length: 32 }, () =>
-      Math.random().toString(36).charAt(2)
-    ).join('');
+    return crypto.randomBytes(16).toString('hex');
   }
 
   private buildUrl(path: string): string {
@@ -43,7 +42,7 @@ export class StashcatAPI {
     return `${baseUrl}/${cleanPath}`;
   }
 
-  async post<T>(path: string, data: any): Promise<T> {
+  async post<T>(path: string, data: unknown): Promise<T> {
     try {
       const response: AxiosResponse<APIResponse> = await this.client.post(
         this.buildUrl(path),
@@ -80,6 +79,10 @@ export class StashcatAPI {
     return this.clientKey;
   }
 
+  getBaseUrl(): string {
+    return this.config.baseUrl || 'https://api.stashcat.com/';
+  }
+
   /**
    * Download a file as raw binary Buffer.
    * The file ID is passed as a query parameter (?id=), auth goes in the POST body.
@@ -110,19 +113,19 @@ export class StashcatAPI {
   /**
    * Create authenticated request data by automatically adding client_key and device_id
    */
-  createAuthenticatedRequestData(additionalData: any): any {
-    const baseData = {
+  createAuthenticatedRequestData(additionalData: object): Record<string, unknown> {
+    const baseData: Record<string, unknown> = {
       client_key: this.clientKey,
       device_id: this.config.deviceId,
-      ...additionalData,
+      ...(additionalData as Record<string, unknown>),
     };
 
     // Remove undefined values
-    Object.keys(baseData).forEach(key => {
+    for (const key of Object.keys(baseData)) {
       if (baseData[key] === undefined) {
         delete baseData[key];
       }
-    });
+    }
 
     return baseData;
   }

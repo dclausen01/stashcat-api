@@ -175,6 +175,12 @@ export class RealtimeManager {
     return Array.from(this.discoveredEvents);
   }
 
+  /** Sende Tipp-Indikator an einen Channel/Conversation */
+  sendTyping(chatType: 'channel' | 'conversation', chatId: string): void {
+    this.socket?.emit('started-typing', chatType, chatId);
+    if (this.options.debug) console.log(`[Realtime] sendTyping: ${chatType}/${chatId}`);
+  }
+
   // ─── Intern ──────────────────────────────────────────────────────────────
 
   private _emit(event: string, ...args: unknown[]): void {

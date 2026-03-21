@@ -18,7 +18,7 @@ export class ConversationManager {
       limit: options.limit || 50,
       offset: options.offset || 0,
       archive: options.archive || 0,
-      sorting: options.sorting || [],
+      sorting: options.sorting ? JSON.stringify(options.sorting) : undefined,
     });
     try {
       const response = await this.api.post<ConversationsResponse>('/message/conversations', request);

@@ -1,5 +1,5 @@
 import { StashcatAPI } from '../api/request';
-import { Message, File } from './types';
+import { Message } from './types';
 import { CryptoManager } from '../encryption/crypto';
 
 interface MessagesResponse {
@@ -58,16 +58,19 @@ export class MessageManager {
         messages = messages.map((message: Message) => {
           const decryptedMessage = { ...message };
           if (message.encrypted && message.text) {
+            if (!message.iv) {
+              throw new Error(`Cannot decrypt message ${message.id}: missing IV`);
+            }
             try {
-              const iv = message.iv ? CryptoManager.hexToBuffer(message.iv) : undefined;
+              const iv = CryptoManager.hexToBuffer(message.iv);
               decryptedMessage.text = CryptoManager.decrypt(
                 message.text,
                 options.key!,
-                iv || CryptoManager.generateKey().iv
+                iv
               );
               decryptedMessage.original_text = message.text;
-            } catch (err) {
-              console.warn(`Failed to decrypt message ${message.id}:`, err);
+            } catch {
+              // Decryption failed — leave original text intact
             }
           }
           return decryptedMessage;
@@ -205,8 +208,11 @@ export class MessageManager {
       const rawData = await this.api.downloadBinary(file.id);
 
       if (file.encrypted && key) {
-        const iv = file.e2e_iv ? CryptoManager.hexToBuffer(file.e2e_iv) : undefined;
-        const decrypted = CryptoManager.decrypt(rawData.toString('base64'), key, iv || CryptoManager.generateKey().iv);
+        if (!file.e2e_iv) {
+          throw new Error(`Cannot decrypt file ${file.id}: missing e2e_iv`);
+        }
+        const iv = CryptoManager.hexToBuffer(file.e2e_iv);
+        const decrypted = CryptoManager.decrypt(rawData.toString('hex'), key, iv);
         return Buffer.from(decrypted, 'hex');
       }
 
