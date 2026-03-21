@@ -41,7 +41,7 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 | `AccountManager`      | `src/account/account.ts`       | Status, password, settings, devices, profile image, notifications     |
 | `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
 | `SecurityManager`     | `src/security/security.ts`     | RSA private key unlock, conversation AES key decryption, cache       |
-| `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-2048, encoding utilities                     |
+| `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-4096 OAEP, encoding utilities                |
 
 ### Request Flow
 
@@ -294,6 +294,8 @@ STASHCAT_EMAIL=your-email@example.com
 STASHCAT_PASSWORD=your-password
 STASHCAT_APP_NAME=stashcat-api-client
 STASHCAT_DEVICE_ID=                           # Optional; auto-generated if omitted
+STASHCAT_SECURITY_PASSWORD=                   # Optional; defaults to STASHCAT_PASSWORD
+                                              # Required for E2E decryption (unlocking RSA private key)
 ```
 
 ## E2E Encryption (live-verified 2026-03-21)
@@ -331,13 +333,17 @@ The private key PEM is a **PKCS#8 PBES2** encrypted key — Node.js decrypts it 
 crypto.createPrivateKey({ key: pem, format: 'pem', passphrase: Buffer.from(securityPassword, 'utf8') })
 ```
 
-### Conversation Key
+### Conversation & Channel Keys
 
-`conversation.key` (base64, 512 bytes = RSA-4096 output):
+Both conversations and channels use the **same mechanism**: a `key` field (base64, 512 bytes = RSA-4096 output):
 ```typescript
 crypto.privateDecrypt({ key: rsaPrivateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, encryptedKeyBuffer)
 // → 32-byte AES key Buffer
 ```
+
+- `conversation.key` — per-conversation AES key, RSA-OAEP encrypted
+- `channel.key` — per-channel AES key, RSA-OAEP encrypted (null for non-encrypted channels)
+- Both are cached by `SecurityManager` (channels with `channel_` prefix to avoid ID collisions)
 
 ### Full Decryption Flow
 
@@ -348,8 +354,9 @@ await client.login({
   securityPassword: password,  // or set separately
 });
 
-// 2. Messages decrypted automatically
+// 2. Messages decrypted automatically — both conversations AND channels
 const messages = await client.getMessages(conversationId, 'conversation');
+const channelMsgs = await client.getMessages(channelId, 'channel');
 // → messages[].text is plaintext
 
 // 3. Manual unlock (if not passed to login)
