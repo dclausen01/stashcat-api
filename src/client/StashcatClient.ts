@@ -241,6 +241,21 @@ export class StashcatClient {
     return this.channels.declineInvite(inviteId);
   }
 
+  async setChannelFavorite(channelId: string, favorite: boolean): Promise<void> {
+    this.requireAuth();
+    return this.channels.setFavorite(channelId, favorite);
+  }
+
+  async enableChannelNotifications(channelId: string): Promise<void> {
+    this.requireAuth();
+    return this.channels.enableNotifications(channelId);
+  }
+
+  async disableChannelNotifications(channelId: string, duration?: number): Promise<void> {
+    this.requireAuth();
+    return this.channels.disableNotifications(channelId, duration);
+  }
+
   // ─── Conversations ───────────────────────────────────────────────────────
 
   async getConversations(options: PaginationOptions = {}): Promise<Conversation[]> {

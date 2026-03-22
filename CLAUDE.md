@@ -87,6 +87,9 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | `/channels/removeUser`            | `removeUserFromChannel()`  |
 | `/channels/addModeratorStatus`    | `addChannelModerator()`    |
 | `/channels/removeModeratorStatus` | `removeChannelModerator()` |
+| `/message/set_favorite`           | `setChannelFavorite()`     |
+| `/push/enable_notifications`      | `enableChannelNotifications()` |
+| `/push/disable_notifications`     | `disableChannelNotifications()` |
 
 ### Conversations
 

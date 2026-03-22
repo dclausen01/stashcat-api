@@ -124,9 +124,20 @@ await client.getChannels(companyId);
 await client.getVisibleChannels(companyId, { search: 'test' });
 await client.getChannelInfo(channelId);
 await client.createChannel({ channel_name, company, type: 'closed' });
+await client.editChannel({ channel_id, company_id, channel_name });
+await client.deleteChannel(channelId);
 await client.joinChannel(channelId);
 await client.quitChannel(channelId);
+await client.inviteUsersToChannel(channelId, [userId]);
+await client.acceptChannelInvite(inviteId);
+await client.declineChannelInvite(inviteId);
 await client.getChannelMembers(channelId);
+await client.removeUserFromChannel(channelId, userId);
+await client.addChannelModerator(channelId, userId);
+await client.removeChannelModerator(channelId, userId);
+await client.setChannelFavorite(channelId, true);
+await client.enableChannelNotifications(channelId);
+await client.disableChannelNotifications(channelId, 60); // duration in minutes (optional)
 ```
 
 ### Conversations
