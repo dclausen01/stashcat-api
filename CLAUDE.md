@@ -384,6 +384,7 @@ const aesKey = await client.getConversationAesKey(conversationId); // Buffer (32
 - Session serialization does **not** persist the RSA private key (security) — call `unlockE2E()` again after `fromSession()`
 - `CryptoManager` is fully static — never instantiate it
 - File upload encryption: provide `encrypted: true` and `iv` (hex) in `FileUploadOptions`
+- File upload filename: `FileUploadOptions.filename` overrides `path.basename(filePath)` — useful when the path is a multer temp file with a random name but the original filename should be preserved on the server
 
 ## Session Persistence (for Nextcloud plugin)
 

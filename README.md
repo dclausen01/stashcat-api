@@ -166,7 +166,15 @@ await client.getFlaggedMessages('channel', channelId);
 
 ```typescript
 await client.downloadFile(file, aesKey);
-await client.uploadFile(filePath, { target: 'channel', targetId, encrypted: true });
+
+// Upload — optional filename overrides the basename of filePath
+// (useful when the path is a temp file with a random name)
+await client.uploadFile(filePath, {
+  type: 'channel',
+  type_id: channelId,
+  filename: 'report.pdf',  // optional: preserves the original filename
+});
+
 await client.listFolder({ type: 'channel', type_id: channelId });
 await client.listPersonalFiles();
 await client.getFileInfo(fileId);

@@ -121,6 +121,10 @@ export interface FileUploadOptions {
   iv?: string;
   media_width?: number;
   media_height?: number;
+  /** Überschreibt den Dateinamen (Standard: path.basename(filePath)). Nützlich wenn der
+   *  Pfad einen temporären Namen trägt (z. B. durch multer), aber der Originalname erhalten
+   *  bleiben soll. */
+  filename?: string;
 }
 
 export interface FileQuota {

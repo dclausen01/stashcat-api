@@ -148,7 +148,7 @@ export class FileManager {
    * @param chunkSize Chunk size in bytes (default 1 MB)
    */
   async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize = 1024 * 1024): Promise<FileInfo> {
-    const filename = path.basename(filePath);
+    const filename = uploadOptions.filename || path.basename(filePath);
     const stats = fs.statSync(filePath);
     const totalSize = stats.size;
     const totalChunks = Math.ceil(totalSize / chunkSize);
