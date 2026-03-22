@@ -91,3 +91,23 @@ temp/
 scripts/run-stdout.txt
 scripts/run-stderr.txt
 scripts/run-output.txt
+scripts/*.txt
+scripts/*.js
+
+# Debug / investigation output files (root level)
+*-out.txt
+*-result.txt
+*-output.txt
+git-st.txt
+git-status*.txt
+log*.txt
+fetch-log.txt
+ahead.txt
+tsc-result.txt
+push-*.txt
+docs-push-out.txt
+build-out.txt
+test-*.txt
+*-inspect.json
+*-investigation.json
+pk-structure.json

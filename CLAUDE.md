@@ -549,8 +549,10 @@ The following behaviors have been confirmed via live testing against schul.cloud
 
 - **Endpoint**: POST `/folder/get`
 - **Required params**: `type` (e.g. `'channel'`, `'conversation'`, `'user'`) + `type_id`
-- **Personal files**: Use `type: 'user'` with `type_id` = user's own ID
-- **Response**: `{ folders: FolderEntry[], files: FileEntry[] }`
+- **Personal files**: Use `type: 'personal'` with `type_id` = user's own ID
+- **Response shape**: `{ content: { folder: FolderEntry[], file?: FileEntry[], files?: FileEntry[] } }`
+- **IMPORTANT**: The API inconsistently returns either `content.file` (singular) **or** `content.files` (plural) depending on the server version/context. `listFolder()` normalises this with `content.file ?? content.files ?? []` → always returns `{ folder, files }`.
+- Files only appear inside sub-folders; the root level typically contains only `folder` entries.
 
 ### Conversations Sorting
 

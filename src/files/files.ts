@@ -47,26 +47,32 @@ export class FileManager {
     const sorting = options.sorting
       ? JSON.stringify(options.sorting)
       : JSON.stringify(['created_desc']);
-    const folderOnly = options.folder_only === true ? 'yes' : 'no';
 
-    const data = this.api.createAuthenticatedRequestData({
+    const params: Record<string, unknown> = {
       folder_id: options.folder_id ?? '0',
       type: options.type,
       type_id: options.type_id,
-      folder_only: folderOnly,
       offset: options.offset ?? 0,
       limit: options.limit ?? 75,
       search: options.search,
       sorting,
       fields: '',
-    });
+    };
+    // Only send folder_only when explicitly true — the API treats any non-empty
+    // value (including 'no') as truthy, which suppresses file results.
+    if (options.folder_only === true) {
+      params.folder_only = 'yes';
+    }
+
+    const data = this.api.createAuthenticatedRequestData(params);
     try {
       // API returns payload.content.folder[] and payload.content.file[] (singular)
-      const response = await this.api.post<{ content: { folder: FolderEntry[]; file: FileEntry[] } }>('/folder/get', data);
-      const content = response.content ?? { folder: [], file: [] };
+      const response = await this.api.post<{ content: { folder?: FolderEntry[]; file?: FileEntry[]; files?: FileEntry[] } }>('/folder/get', data);
+      const content = response.content ?? {};
       return {
         folder: content.folder ?? [],
-        files: content.file ?? [],   // API uses "file" (singular), we expose it as "files"
+        // API may return "file" (singular) or "files" (plural) depending on context
+        files: content.file ?? content.files ?? [],
       };
     } catch (error) {
       throw new Error(`Failed to list folder: ${error instanceof Error ? error.message : error}`);
