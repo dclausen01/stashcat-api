@@ -351,6 +351,23 @@ export class StashcatClient {
     return this.security.decryptConversationKey(conv.key, conversationId);
   }
 
+  /**
+   * Decrypt a channel's AES key using the unlocked RSA private key.
+   * Returns the 32-byte AES key buffer. Result is cached by channel ID.
+   * Throws if E2E is not unlocked or the channel is not encrypted.
+   */
+  async getChannelAesKey(channelId: string): Promise<Buffer> {
+    this.requireAuth();
+    if (!this.security.isUnlocked()) {
+      throw new Error('E2E not unlocked — call unlockE2E() first');
+    }
+    const ch = await this.channels.getChannelInfo(channelId, true);
+    if (!ch.encrypted || !ch.key) {
+      throw new Error(`Channel ${channelId} is not encrypted or has no key`);
+    }
+    return this.security.decryptConversationKey(ch.key, `channel_${channelId}`);
+  }
+
   async sendMessage(options: SendMessageOptions): Promise<Message> {
     this.requireAuth();
     return this.messages.sendMessage(options);
