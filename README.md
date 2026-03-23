@@ -12,6 +12,7 @@ A TypeScript API client library for [Stashcat](https://www.stashcat.com/) messen
 - E2E encryption (RSA-4096 OAEP + AES-256-CBC) with automatic decryption
 - Company discovery and member listing
 - Real-time events via Socket.io (push.stashcat.com)
+- Broadcast lists (create, manage members, send messages)
 - Account settings, devices, notifications
 - Session serialization for server-side use (e.g. Nextcloud plugins)
 
@@ -214,6 +215,27 @@ await client.inviteToEvent(eventId, [userId1, userId2]);
 // CalDAV sync URLs and channels with events
 const calendars = await client.listAvailableCalendars();
 const channels = await client.listChannelsHavingEvents(companyId);
+```
+
+### Broadcasts
+
+```typescript
+// List all broadcast lists
+const broadcasts = await client.listBroadcasts();
+
+// Create, rename, delete
+const bc = await client.createBroadcast('Announcements', [userId1, userId2]);
+await client.renameBroadcast(bc.id, 'New Name');
+await client.deleteBroadcast(bc.id);
+
+// Member management
+await client.addBroadcastMembers(bc.id, [userId3]);
+await client.removeBroadcastMembers(bc.id, [userId2]);
+const members = await client.listBroadcastMembers(bc.id);
+
+// Messages
+const messages = await client.getBroadcastContent({ list_id: bc.id, limit: 50 });
+await client.sendBroadcastMessage({ list_id: bc.id, text: 'Hello everyone!' });
 ```
 
 ### Users & Companies

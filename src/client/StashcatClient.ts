@@ -16,6 +16,8 @@ import { RealtimeManager } from '../realtime/realtime';
 import { RealtimeManagerOptions } from '../realtime/types';
 import { CalendarManager } from '../calendar/calendar';
 import { CalendarEvent, CreateEventOptions, EditEventOptions, ListEventsOptions, EventInviteStatus, AvailableCalendar } from '../calendar/types';
+import { BroadcastManager } from '../broadcast/broadcast';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from '../broadcast/types';
 
 export interface StashcatClientConfig extends StashcatConfig {
   email?: string;
@@ -42,6 +44,7 @@ export class StashcatClient {
   private files: FileManager;
   private security: SecurityManager;
   private calendar: CalendarManager;
+  private broadcast: BroadcastManager;
 
   constructor(config: StashcatClientConfig = {}) {
     this.api = new StashcatAPI(config);
@@ -54,6 +57,7 @@ export class StashcatClient {
     this.files = new FileManager(this.api);
     this.security = new SecurityManager(this.api);
     this.calendar = new CalendarManager(this.api);
+    this.broadcast = new BroadcastManager(this.api);
   }
 
   // ─── Auth ────────────────────────────────────────────────────────────────
@@ -556,6 +560,53 @@ export class StashcatClient {
   async listChannelsHavingEvents(companyId: string): Promise<Channel[]> {
     this.requireAuth();
     return this.calendar.listChannelsHavingEvents(companyId);
+  }
+
+  // ─── Broadcast ──────────────────────────────────────────────────────────
+
+  async listBroadcasts(): Promise<Broadcast[]> {
+    this.requireAuth();
+    return this.broadcast.listBroadcasts();
+  }
+
+  async createBroadcast(name: string, memberIds: string[]): Promise<Broadcast> {
+    this.requireAuth();
+    return this.broadcast.createBroadcast(name, memberIds);
+  }
+
+  async deleteBroadcast(listId: string): Promise<void> {
+    this.requireAuth();
+    return this.broadcast.deleteBroadcast(listId);
+  }
+
+  async renameBroadcast(listId: string, name: string): Promise<void> {
+    this.requireAuth();
+    return this.broadcast.renameBroadcast(listId, name);
+  }
+
+  async addBroadcastMembers(listId: string, memberIds: string[]): Promise<void> {
+    this.requireAuth();
+    return this.broadcast.addMembers(listId, memberIds);
+  }
+
+  async removeBroadcastMembers(listId: string, memberIds: string[]): Promise<void> {
+    this.requireAuth();
+    return this.broadcast.removeMembers(listId, memberIds);
+  }
+
+  async listBroadcastMembers(listId: string, sorting?: BroadcastMemberSortField[]): Promise<unknown[]> {
+    this.requireAuth();
+    return this.broadcast.listMembers(listId, sorting);
+  }
+
+  async getBroadcastContent(options: BroadcastContentOptions): Promise<Message[]> {
+    this.requireAuth();
+    return this.broadcast.getContent(options);
+  }
+
+  async sendBroadcastMessage(options: SendBroadcastOptions): Promise<Message> {
+    this.requireAuth();
+    return this.broadcast.sendMessage(options);
   }
 
   // ─── Security ────────────────────────────────────────────────────────────
