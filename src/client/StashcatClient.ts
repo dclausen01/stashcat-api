@@ -14,6 +14,8 @@ import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuot
 import { SecurityManager, PrivateKeyResponse } from '../security/security';
 import { RealtimeManager } from '../realtime/realtime';
 import { RealtimeManagerOptions } from '../realtime/types';
+import { CalendarManager } from '../calendar/calendar';
+import { CalendarEvent, CreateEventOptions, EditEventOptions, ListEventsOptions, EventInviteStatus, AvailableCalendar } from '../calendar/types';
 
 export interface StashcatClientConfig extends StashcatConfig {
   email?: string;
@@ -39,6 +41,7 @@ export class StashcatClient {
   private account: AccountManager;
   private files: FileManager;
   private security: SecurityManager;
+  private calendar: CalendarManager;
 
   constructor(config: StashcatClientConfig = {}) {
     this.api = new StashcatAPI(config);
@@ -50,6 +53,7 @@ export class StashcatClient {
     this.account = new AccountManager(this.api);
     this.files = new FileManager(this.api);
     this.security = new SecurityManager(this.api);
+    this.calendar = new CalendarManager(this.api);
   }
 
   // ─── Auth ────────────────────────────────────────────────────────────────
@@ -505,6 +509,53 @@ export class StashcatClient {
   async getNotificationCount(): Promise<number> {
     this.requireAuth();
     return this.account.getNotificationCount();
+  }
+
+  // ─── Calendar ───────────────────────────────────────────────────────────
+
+  async listEvents(options: ListEventsOptions): Promise<CalendarEvent[]> {
+    this.requireAuth();
+    return this.calendar.listEvents(options);
+  }
+
+  async getEventDetails(eventIds: string[]): Promise<CalendarEvent | null> {
+    this.requireAuth();
+    return this.calendar.getEventDetails(eventIds);
+  }
+
+  async createEvent(options: CreateEventOptions): Promise<string> {
+    this.requireAuth();
+    return this.calendar.createEvent(options);
+  }
+
+  async editEvent(options: EditEventOptions): Promise<string> {
+    this.requireAuth();
+    return this.calendar.editEvent(options);
+  }
+
+  async deleteEvents(eventIds: string[]): Promise<void> {
+    this.requireAuth();
+    return this.calendar.deleteEvents(eventIds);
+  }
+
+  async respondToEvent(eventId: string, userId: string, status: EventInviteStatus): Promise<void> {
+    this.requireAuth();
+    return this.calendar.respondToEvent(eventId, userId, status);
+  }
+
+  async inviteToEvent(eventId: string, userIds: string[]): Promise<void> {
+    this.requireAuth();
+    return this.calendar.inviteToEvent(eventId, userIds);
+  }
+
+  async listAvailableCalendars(): Promise<AvailableCalendar[]> {
+    this.requireAuth();
+    return this.calendar.listAvailableCalendars();
+  }
+
+  async listChannelsHavingEvents(companyId: string): Promise<Channel[]> {
+    this.requireAuth();
+    return this.calendar.listChannelsHavingEvents(companyId);
   }
 
   // ─── Security ────────────────────────────────────────────────────────────

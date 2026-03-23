@@ -23,6 +23,10 @@ export { AccountSettings, ActiveDevice, Notification } from './account/types';
 export { FileManager } from './files/files';
 export { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota, FileStorageType } from './files/types';
 
+// Calendar
+export { CalendarManager } from './calendar/calendar';
+export { CalendarEvent, EventType, EventInviteStatus, EventRepeat, EventInvite, EventUser, CreateEventOptions, EditEventOptions, ListEventsOptions, AvailableCalendar } from './calendar/types';
+
 // Security
 export { SecurityManager, PrivateKeyResponse, EncryptionKeyData } from './security/security';
 
