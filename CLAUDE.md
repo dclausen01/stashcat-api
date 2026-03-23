@@ -40,6 +40,7 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 | `RealtimeManager`     | `src/realtime/realtime.ts`     | Socket.io v4 push events from push.stashcat.com                      |
 | `AccountManager`      | `src/account/account.ts`       | Status, password, settings, devices, profile image, notifications     |
 | `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
+| `CalendarManager`     | `src/calendar/calendar.ts`     | Calendar events: CRUD, invites, respond, CalDAV calendars             |
 | `SecurityManager`     | `src/security/security.ts`     | RSA private key unlock, conversation AES key decryption, cache       |
 | `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-4096 OAEP, encoding utilities                |
 
@@ -139,6 +140,23 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | `/company/member`  | `getCompanies()` (without company_id) / `getCompanyMembers()`   |
 | `/company/details` | `getCompanyDetails()`                                            |
 
+### Calendar (live-verified 2026-03-23)
+
+| Endpoint                              | Method                          |
+| ------------------------------------- | ------------------------------- |
+| `/events/list`                        | `listEvents()`                  |
+| `/events/details`                     | `getEventDetails()`             |
+| `/events/create`                      | `createEvent()`                 |
+| `/events/edit`                        | `editEvent()`                   |
+| `/events/delete`                      | `deleteEvents()`                |
+| `/events/respond`                     | `respondToEvent()`              |
+| `/events/invite`                      | `inviteToEvent()`               |
+| `/events/list_available_calendars`    | `listAvailableCalendars()`      |
+| `/events/list_channels_having_events` | `listChannelsHavingEvents()`    |
+
+Event types: `personal`, `channel`, `company`. Start/end times are Unix timestamps (seconds).
+Invite status: `accepted`, `declined`, `open`.
+
 ### Account
 
 | Endpoint                       | Method                   |
@@ -201,6 +219,9 @@ src/
 ├── files/
 │   ├── files.ts               # FileManager (including chunked upload)
 │   └── types.ts               # FileInfo, FolderItem, FolderListOptions, FileUploadOptions
+├── calendar/
+│   ├── calendar.ts            # CalendarManager (events CRUD, invites, CalDAV)
+│   └── types.ts               # CalendarEvent, CreateEventOptions, EventInviteStatus
 ├── security/
 │   └── security.ts            # SecurityManager
 └── encryption/
@@ -638,7 +659,7 @@ Extended with +11 fields from live `/users/me` response:
 
 ## Known Gaps (not yet implemented)
 
-- Calendar module (`/calendar/*`)
+- Broadcast module (`/broadcast/*`)
 - Surveys/polls (`/survey/*`)
 - Admin/management functions (`/manage/*`)
 - Voice/video calls (proprietary, likely not REST-based)

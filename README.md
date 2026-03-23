@@ -184,6 +184,38 @@ await client.deleteFiles([fileId]);
 await client.getStorageQuota('channel', channelId);
 ```
 
+### Calendar
+
+```typescript
+// List events in a time range (Unix timestamps in seconds)
+const events = await client.listEvents({ start: 1709251200, end: 1711929600 });
+
+// Event details
+const event = await client.getEventDetails(['12345']);
+
+// Create event (types: 'personal', 'channel', 'company')
+const eventId = await client.createEvent({
+  name: 'Team Meeting',
+  start: 1709251200,
+  end: 1709258400,
+  type: 'channel',
+  type_id: channelId,
+  company_id: companyId,
+  location: 'Room 101',
+  description: 'Weekly sync',
+});
+
+// Edit, delete, respond to invites
+await client.editEvent({ event_id: eventId, ...updatedFields });
+await client.deleteEvents([eventId]);
+await client.respondToEvent(eventId, userId, 'accepted'); // or 'declined', 'open'
+await client.inviteToEvent(eventId, [userId1, userId2]);
+
+// CalDAV sync URLs and channels with events
+const calendars = await client.listAvailableCalendars();
+const channels = await client.listChannelsHavingEvents(companyId);
+```
+
 ### Users & Companies
 
 ```typescript
