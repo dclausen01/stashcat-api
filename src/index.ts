@@ -9,11 +9,11 @@ export { AuthManager, AuthConfig, AuthState } from './auth/login';
 export { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from './chats/channels';
 export { ConversationManager } from './chats/conversations';
 export { MessageManager, SendMessageOptions } from './chats/messages';
-export { Channel, ChannelMember, Conversation, ConversationParticipant, Message, MessageFile, MessageSender, PaginationOptions } from './chats/types';
+export { Channel, ChannelMember, Conversation, ConversationParticipant, Message, MessageFile, MessageLiker, MessageSender, PaginationOptions } from './chats/types';
 
 // Users
 export { UserManager } from './users/users';
-export { User, Company, CompanyMember } from './users/types';
+export { User, Company, CompanyMember, ManagedUser, CompanyGroup } from './users/types';
 
 // Account
 export { AccountManager } from './account/account';

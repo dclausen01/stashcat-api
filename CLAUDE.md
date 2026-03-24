@@ -99,6 +99,7 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | -------------------------------------- | ------------------------------- |
 | `/message/conversations`               | `getConversations()`            |
 | `/message/conversation`                | `getConversation()`             |
+| `/message/createConversation`          | `createConversation()`          |
 | `/message/createEncryptedConversation` | `createEncryptedConversation()` |
 | `/message/archiveConversation`         | `archiveConversation()`         |
 | `/message/set_favorite`                | `setConversationFavorite()`     |
@@ -113,6 +114,7 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | `/message/mark_read`             | `markAsRead()`         |
 | `/message/like`                  | `likeMessage()`        |
 | `/message/unlike`                | `unlikeMessage()`      |
+| `/message/list_likes`            | `listLikes()`          |
 | `/message/flag`                  | `flagMessage()`        |
 | `/message/unflag`                | `unflagMessage()`      |
 | `/message/list_flagged_messages` | `getFlaggedMessages()` |
@@ -645,6 +647,24 @@ interface MessageFile {
 }
 ```
 
+### MessageLiker (src/chats/types.ts)
+
+Returned by `listLikes()` / `/message/list_likes` (live-verified 2026-03-24):
+
+```typescript
+interface MessageLiker {
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    image?: string;
+    deleted?: string | null;
+    online?: boolean;
+  };
+  liked_at: number; // Unix timestamp (seconds)
+}
+```
+
 ### Channel (src/chats/types.ts)
 
 Extended with +11 fields from live API responses:
@@ -674,6 +694,18 @@ Extended with +11 fields from live `/users/me` response:
 - **No message search** — No `/message/search` endpoint known.
 - **No `/company/get` or `/company/info`** — Only `/company/member` and `/company/details` work.
 - **`reciever` typo** — The API spells it `reciever` (not `receiver`) in message payloads.
+- **`createEncryptedConversation` members format** — `members: JSON.stringify(memberIds)` (plain ID array) is rejected with "invalid_parameter". The endpoint requires either member objects with RSA-encrypted keys (`{id, key}`) or use `/message/createConversation` instead. Use `createConversation()` for simple conversation creation (live-verified 2026-03-24).
+
+## `/message/createConversation` (live-verified 2026-03-24)
+
+| Endpoint                       | Method                  |
+| ------------------------------ | ----------------------- |
+| `/message/createConversation`  | `createConversation()`  |
+
+- **Parameters**: `members: JSON.stringify(memberIds)` — array of user ID strings
+- **Returns**: existing conversation if members already have one, or a new conversation
+- **Works for**: 1:1 conversations and group conversations (up to N members)
+- **Note**: The API silently deduplicates — creating the same 1:1 conversation twice returns the existing one
 
 ## Known Gaps (not yet implemented)
 

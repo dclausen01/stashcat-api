@@ -4,9 +4,9 @@ import { AuthConfig } from '../auth/types';
 import { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from '../chats/channels';
 import { ConversationManager } from '../chats/conversations';
 import { MessageManager, SendMessageOptions } from '../chats/messages';
-import { Channel, ChannelMember, Conversation, Message, PaginationOptions } from '../chats/types';
+import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { UserManager } from '../users/users';
-import { User, CompanyMember } from '../users/types';
+import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
 import { AccountManager } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileManager } from '../files/files';
@@ -167,9 +167,30 @@ export class StashcatClient {
     return this.users.getCompanyDetails(companyId);
   }
 
-  async getCompanyMembers(companyId: string, noCache = false): Promise<CompanyMember[]> {
+  async getCompanyMembers(
+    companyId: string,
+    options?: { limit?: number; offset?: number; search?: string; noCache?: boolean } | boolean,
+  ): Promise<CompanyMember[]> {
     this.requireAuth();
-    return this.users.getCompanyMembers(companyId, noCache);
+    return this.users.getCompanyMembers(companyId, options);
+  }
+
+  async getAllCompanyMembers(companyId: string): Promise<CompanyMember[]> {
+    this.requireAuth();
+    return this.users.getAllCompanyMembers(companyId);
+  }
+
+  async listManagedUsers(
+    companyId: string,
+    options?: { limit?: number; offset?: number; search?: string; groupIds?: string[] },
+  ): Promise<{ users: ManagedUser[]; total: number }> {
+    this.requireAuth();
+    return this.users.listManagedUsers(companyId, options);
+  }
+
+  async listGroups(companyId: string): Promise<CompanyGroup[]> {
+    this.requireAuth();
+    return this.users.listGroups(companyId);
   }
 
   // ─── Channels ────────────────────────────────────────────────────────────
@@ -274,6 +295,11 @@ export class StashcatClient {
   async getConversation(conversationId: string): Promise<Conversation> {
     this.requireAuth();
     return this.conversations.getConversation(conversationId);
+  }
+
+  async createConversation(memberIds: string[]): Promise<Conversation> {
+    this.requireAuth();
+    return this.conversations.createConversation(memberIds);
   }
 
   async createEncryptedConversation(memberIds: string[], uniqueIdentifier: string): Promise<Conversation> {
@@ -398,6 +424,11 @@ export class StashcatClient {
   async likeMessage(messageId: string): Promise<void> {
     this.requireAuth();
     return this.messages.likeMessage(messageId);
+  }
+
+  async listLikes(messageId: string): Promise<MessageLiker[]> {
+    this.requireAuth();
+    return this.messages.listLikes(messageId);
   }
 
   async unlikeMessage(messageId: string): Promise<void> {

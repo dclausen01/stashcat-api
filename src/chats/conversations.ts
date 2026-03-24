@@ -40,6 +40,23 @@ export class ConversationManager {
   }
 
   /**
+   * Create a new conversation with the given members.
+   * Returns the existing conversation if one already exists with the same members.
+   * @param memberIds Array of user IDs to add (do not include own ID)
+   */
+  async createConversation(memberIds: string[]): Promise<Conversation> {
+    const request = this.api.createAuthenticatedRequestData({
+      members: JSON.stringify(memberIds),
+    });
+    try {
+      const response = await this.api.post<ConversationResponse>('/message/createConversation', request);
+      return response.conversation;
+    } catch (error) {
+      throw new Error(`Failed to create conversation: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
    * Create a new encrypted group conversation.
    * @param memberIds Array of user IDs to add
    * @param uniqueIdentifier Encryption key identifier (bytes as hex string)
