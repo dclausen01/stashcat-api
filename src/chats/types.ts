@@ -164,6 +164,18 @@ export interface Message {
   has_file_attached?: boolean;
 }
 
+export interface MessageLiker {
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    image?: string;
+    deleted?: string | null;
+    online?: boolean;
+  };
+  liked_at: number;
+}
+
 export interface MessageSender {
   id: string;
   /** Vollständiger Name (manchmal befüllt) */

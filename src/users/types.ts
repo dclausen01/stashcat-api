@@ -54,3 +54,34 @@ export interface CompanyMember {
   joined_at: string;
   user?: User;
 }
+
+/** A user record returned by /manage/list_users */
+export interface ManagedUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  tag?: string;
+  email: string;
+  time_joined?: string;
+  membership_expiry?: string | null;
+  deactivated?: string | null;
+  active?: boolean;
+  last_login?: string;
+  roles?: Array<{ id: string; name: string; company_id: string }>;
+  image?: string;
+  allows_voip_calls?: boolean;
+  mx_user_id?: string;
+}
+
+/** An AD/LDAP group returned by /manage/list_groups */
+export interface CompanyGroup {
+  id: string;
+  name: string;
+  description?: string;
+  company?: string;
+  ldap_group?: string;
+  user_id?: string;
+  create_channel?: boolean;
+  limit_communication?: boolean;
+  count: number;
+}

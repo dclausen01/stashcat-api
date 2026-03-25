@@ -1,5 +1,5 @@
 import { StashcatAPI } from '../api/request';
-import { Message } from './types';
+import { Message, MessageLiker } from './types';
 import { CryptoManager } from '../encryption/crypto';
 
 interface MessagesResponse {
@@ -148,6 +148,17 @@ export class MessageManager {
       await this.api.post('/message/like', request);
     } catch (error) {
       throw new Error(`Failed to like message: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /** List users who liked a message */
+  async listLikes(messageId: string): Promise<MessageLiker[]> {
+    const request = this.api.createAuthenticatedRequestData({ message_id: messageId });
+    try {
+      const payload = await this.api.post<{ likes: MessageLiker[] }>('/message/list_likes', request);
+      return payload.likes || [];
+    } catch (error) {
+      throw new Error(`Failed to list likes: ${error instanceof Error ? error.message : error}`);
     }
   }
 
