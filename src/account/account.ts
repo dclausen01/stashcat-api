@@ -135,4 +135,16 @@ export class AccountManager {
       throw new Error(`Failed to get notification count: ${error instanceof Error ? error.message : error}`);
     }
   }
+
+  /**
+   * Delete a notification
+   */
+  async deleteNotification(notificationId: string): Promise<void> {
+    const data = this.api.createAuthenticatedRequestData({ notification_id: notificationId });
+    try {
+      await this.api.post('/notifications/delete', data);
+    } catch (error) {
+      throw new Error(`Failed to delete notification: ${error instanceof Error ? error.message : error}`);
+    }
+  }
 }

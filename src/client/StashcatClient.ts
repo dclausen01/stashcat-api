@@ -546,6 +546,11 @@ export class StashcatClient {
     return this.account.getNotificationCount();
   }
 
+  async deleteNotification(notificationId: string): Promise<void> {
+    this.requireAuth();
+    return this.account.deleteNotification(notificationId);
+  }
+
   // ─── Calendar ───────────────────────────────────────────────────────────
 
   async listEvents(options: ListEventsOptions): Promise<CalendarEvent[]> {
