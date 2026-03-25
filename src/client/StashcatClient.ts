@@ -34,7 +34,7 @@ export interface SerializedSession {
 }
 
 export class StashcatClient {
-  private api: StashcatAPI;
+  public api: StashcatAPI;
   private auth: AuthManager;
   private channels: ChannelManager;
   private conversations: ConversationManager;
