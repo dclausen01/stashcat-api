@@ -18,6 +18,14 @@ import { CalendarManager } from '../calendar/calendar';
 import { CalendarEvent, CreateEventOptions, EditEventOptions, ListEventsOptions, EventInviteStatus, AvailableCalendar } from '../calendar/types';
 import { BroadcastManager } from '../broadcast/broadcast';
 import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from '../broadcast/types';
+import { PollManager } from '../poll/poll';
+import {
+  Poll, PollListItem, PollQuestion, PollAnswer, PollUser,
+  PollConstraint, PollInviteTarget,
+  CreatePollOptions, EditPollOptions,
+  CreateQuestionOptions, EditQuestionOptions,
+  CreateAnswerOptions, EditAnswerOptions,
+} from '../poll/types';
 
 export interface StashcatClientConfig extends StashcatConfig {
   email?: string;
@@ -45,6 +53,7 @@ export class StashcatClient {
   private security: SecurityManager;
   private calendar: CalendarManager;
   private broadcast: BroadcastManager;
+  private poll: PollManager;
 
   constructor(config: StashcatClientConfig = {}) {
     this.api = new StashcatAPI(config);
@@ -58,6 +67,7 @@ export class StashcatClient {
     this.security = new SecurityManager(this.api);
     this.calendar = new CalendarManager(this.api);
     this.broadcast = new BroadcastManager(this.api);
+    this.poll = new PollManager(this.api);
   }
 
   // ─── Auth ────────────────────────────────────────────────────────────────
@@ -643,6 +653,113 @@ export class StashcatClient {
   async sendBroadcastMessage(options: SendBroadcastOptions): Promise<Message> {
     this.requireAuth();
     return this.broadcast.sendMessage(options);
+  }
+
+  // ─── Polls (Surveys) ───────────────────────────────────────────────────
+
+  async listPolls(constraint: PollConstraint, companyId?: string): Promise<PollListItem[]> {
+    this.requireAuth();
+    return this.poll.listPolls(constraint, companyId);
+  }
+
+  async getPollDetails(pollId: string, companyId: string): Promise<Poll> {
+    this.requireAuth();
+    return this.poll.getPollDetails(pollId, companyId);
+  }
+
+  async createPoll(options: CreatePollOptions): Promise<Poll> {
+    this.requireAuth();
+    return this.poll.createPoll(options);
+  }
+
+  async editPoll(options: EditPollOptions): Promise<void> {
+    this.requireAuth();
+    return this.poll.editPoll(options);
+  }
+
+  async deletePoll(pollId: string): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.deletePoll(pollId);
+  }
+
+  async publishPoll(pollId: string): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.publishPoll(pollId);
+  }
+
+  async archivePoll(pollId: string, archive: boolean): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.archivePoll(pollId, archive);
+  }
+
+  async watchPoll(pollId: string, watch: boolean): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.watchPoll(pollId, watch);
+  }
+
+  async inviteToPoll(pollId: string, companyId: string, inviteTo: PollInviteTarget, inviteIds: string[]): Promise<void> {
+    this.requireAuth();
+    return this.poll.inviteToPoll(pollId, companyId, inviteTo, inviteIds);
+  }
+
+  async listPollInvitedUsers(pollId: string): Promise<PollUser[]> {
+    this.requireAuth();
+    return this.poll.listInvitedUsers(pollId);
+  }
+
+  async listPollInvites(pollId: string, type?: PollInviteTarget, offset?: number, limit?: number): Promise<unknown[]> {
+    this.requireAuth();
+    return this.poll.listInvites(pollId, type, offset, limit);
+  }
+
+  async listPollParticipants(pollId: string): Promise<PollUser[]> {
+    this.requireAuth();
+    return this.poll.listParticipants(pollId);
+  }
+
+  async exportPoll(pollId: string): Promise<Buffer> {
+    this.requireAuth();
+    return this.poll.exportPoll(pollId);
+  }
+
+  async createPollQuestion(options: CreateQuestionOptions): Promise<PollQuestion> {
+    this.requireAuth();
+    return this.poll.createQuestion(options);
+  }
+
+  async editPollQuestion(options: EditQuestionOptions): Promise<PollQuestion> {
+    this.requireAuth();
+    return this.poll.editQuestion(options);
+  }
+
+  async deletePollQuestion(companyId: string, questionId: string): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.deleteQuestion(companyId, questionId);
+  }
+
+  async listPollAnswers(questionId: string): Promise<PollAnswer[]> {
+    this.requireAuth();
+    return this.poll.listAnswers(questionId);
+  }
+
+  async createPollAnswer(options: CreateAnswerOptions): Promise<PollAnswer> {
+    this.requireAuth();
+    return this.poll.createAnswer(options);
+  }
+
+  async editPollAnswer(options: EditAnswerOptions): Promise<PollAnswer> {
+    this.requireAuth();
+    return this.poll.editAnswer(options);
+  }
+
+  async deletePollAnswer(companyId: string, answerId: string): Promise<boolean> {
+    this.requireAuth();
+    return this.poll.deleteAnswer(companyId, answerId);
+  }
+
+  async storePollUserAnswers(questionId: string, answerIds: string[]): Promise<unknown> {
+    this.requireAuth();
+    return this.poll.storeUserAnswers(questionId, answerIds);
   }
 
   // ─── Security ────────────────────────────────────────────────────────────

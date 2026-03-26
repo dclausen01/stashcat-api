@@ -13,6 +13,8 @@ A TypeScript API client library for [Stashcat](https://www.stashcat.com/) messen
 - Company discovery and member listing
 - Real-time events via Socket.io (push.stashcat.com)
 - Broadcast lists (create, manage members, send messages)
+- Polls/surveys (create, questions, answers, voting, invite, export)
+- Calendar events (CRUD, invites, CalDAV sync)
 - Account settings, devices, notifications
 - Session serialization for server-side use (e.g. Nextcloud plugins)
 
@@ -236,6 +238,51 @@ const members = await client.listBroadcastMembers(bc.id);
 // Messages
 const messages = await client.getBroadcastContent({ list_id: bc.id, limit: 50 });
 await client.sendBroadcastMessage({ list_id: bc.id, text: 'Hello everyone!' });
+```
+
+### Polls (Surveys)
+
+```typescript
+// List polls (constraint: 'createdByAndNotArchived', 'invited', 'archived')
+const polls = await client.listPolls('createdByAndNotArchived', companyId);
+
+// Full details with questions
+const poll = await client.getPollDetails(pollId, companyId);
+
+// Create a poll (starts as draft)
+const newPoll = await client.createPoll({
+  company_id: companyId,
+  name: 'Team Lunch Vote',
+  description: 'Where should we eat?',
+  privacy_type: 'open', // or 'hidden', 'anonymous'
+  start_time: 1711929600,
+  end_time: 1712534400,
+});
+
+// Add questions and answers
+const question = await client.createPollQuestion({
+  company_id: companyId,
+  poll_id: newPoll.id.toString(),
+  name: 'Which restaurant?',
+  type: 'text',
+});
+await client.createPollAnswer({
+  company_id: companyId,
+  question_id: question.id.toString(),
+  type: 'text',
+  answer_text: 'Italian place',
+});
+
+// Publish, invite, vote
+await client.publishPoll(newPoll.id.toString());
+await client.inviteToPoll(newPoll.id.toString(), companyId, 'channels', [channelId]);
+await client.storePollUserAnswers(question.id.toString(), [answerId]);
+
+// Results and management
+const participants = await client.listPollParticipants(pollId);
+const answers = await client.listPollAnswers(question.id.toString());
+const csv = await client.exportPoll(pollId);
+await client.archivePoll(pollId, true);
 ```
 
 ### Users & Companies

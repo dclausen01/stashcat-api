@@ -42,6 +42,7 @@ The library uses a **Manager + Facade** pattern. `StashcatClient` is the single 
 | `FileManager`         | `src/files/files.ts`           | File info, folder listing, chunked upload, delete, rename, move, copy |
 | `CalendarManager`     | `src/calendar/calendar.ts`     | Calendar events: CRUD, invites, respond, CalDAV calendars             |
 | `BroadcastManager`    | `src/broadcast/broadcast.ts`   | Broadcast lists: CRUD, members, send messages, get content            |
+| `PollManager`         | `src/poll/poll.ts`             | Polls/surveys: CRUD, questions, answers, invites, export, voting      |
 | `SecurityManager`     | `src/security/security.ts`     | RSA private key unlock, conversation AES key decryption, cache       |
 | `CryptoManager`       | `src/encryption/crypto.ts`     | Static: AES-256-CBC, RSA-4096 OAEP, encoding utilities                |
 
@@ -174,6 +175,35 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 Event types: `personal`, `channel`, `company`. Start/end times are Unix timestamps (seconds).
 Invite status: `accepted`, `declined`, `open`.
 
+### Polls / Surveys (reverse-engineered 2026-03-26)
+
+| Endpoint                    | Method                     |
+| --------------------------- | -------------------------- |
+| `/poll/list`                | `listPolls()`              |
+| `/poll/details`             | `getPollDetails()`         |
+| `/poll/create`              | `createPoll()`             |
+| `/poll/edit`                | `editPoll()`               |
+| `/poll/delete`              | `deletePoll()`             |
+| `/poll/publish`             | `publishPoll()`            |
+| `/poll/archive`             | `archivePoll()`            |
+| `/poll/watch`               | `watchPoll()`              |
+| `/poll/export`              | `exportPoll()`             |
+| `/poll/invite`              | `inviteToPoll()`           |
+| `/poll/list_invited_users`  | `listPollInvitedUsers()`   |
+| `/poll/list_invites`        | `listPollInvites()`        |
+| `/poll/list_participants`   | `listPollParticipants()`   |
+| `/poll/create_question`     | `createPollQuestion()`     |
+| `/poll/edit_question`       | `editPollQuestion()`       |
+| `/poll/delete_question`     | `deletePollQuestion()`     |
+| `/poll/create_answer`       | `createPollAnswer()`       |
+| `/poll/edit_answer`         | `editPollAnswer()`         |
+| `/poll/delete_answer`       | `deletePollAnswer()`       |
+| `/poll/list_answers`        | `listPollAnswers()`        |
+| `/poll/store_user_answers`  | `storePollUserAnswers()`   |
+
+Poll lifecycle: create (draft) → add questions/answers → publish → invite users/channels → users vote → archive.
+Privacy types: `open`, `hidden`, `anonymous`. Constraint filter: `createdByAndNotArchived`, `invited`, `archived`.
+
 ### Account
 
 | Endpoint                       | Method                   |
@@ -242,6 +272,9 @@ src/
 ├── calendar/
 │   ├── calendar.ts            # CalendarManager (events CRUD, invites, CalDAV)
 │   └── types.ts               # CalendarEvent, CreateEventOptions, EventInviteStatus
+├── poll/
+│   ├── poll.ts                # PollManager (surveys: CRUD, questions, answers, voting)
+│   └── types.ts               # Poll, PollQuestion, PollAnswer, CreatePollOptions
 ├── security/
 │   └── security.ts            # SecurityManager
 └── encryption/
@@ -709,9 +742,8 @@ Extended with +11 fields from live `/users/me` response:
 
 ## Known Gaps (not yet implemented)
 
-- Surveys/polls (`/survey/*`)
 - Admin/management functions (`/manage/*`)
-- Voice/video calls (proprietary, likely not REST-based)
+- Voice/video calls (LiveKit-based, `/conference/create`, `/conference/invite` + `/call/*` status endpoints exist but actual WebRTC handled by LiveKit server)
 - Full E2E key exchange for multi-participant conversations (key distribution flow)
 - Auto-reconnect on session expiry
 - Multi-user session pool (needed for Nextcloud: one `StashcatClient` per Nextcloud user)

@@ -31,6 +31,16 @@ export { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemb
 export { CalendarManager } from './calendar/calendar';
 export { CalendarEvent, EventType, EventInviteStatus, EventRepeat, EventInvite, EventUser, CreateEventOptions, EditEventOptions, ListEventsOptions, AvailableCalendar } from './calendar/types';
 
+// Poll (Surveys)
+export { PollManager } from './poll/poll';
+export {
+  Poll, PollListItem, PollQuestion, PollAnswer, PollUser,
+  PollPrivacyType, PollConstraint, PollInviteTarget,
+  CreatePollOptions, EditPollOptions,
+  CreateQuestionOptions, EditQuestionOptions,
+  CreateAnswerOptions, EditAnswerOptions,
+} from './poll/types';
+
 // Security
 export { SecurityManager, PrivateKeyResponse, EncryptionKeyData } from './security/security';
 
