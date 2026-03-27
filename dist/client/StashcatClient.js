@@ -405,6 +405,10 @@ class StashcatClient {
         this.requireAuth();
         return this.account.storeProfileImage(imgBase64);
     }
+    async resetProfileImage() {
+        this.requireAuth();
+        return this.account.resetProfileImage();
+    }
     async getNotifications(limit, offset) {
         this.requireAuth();
         return this.account.getNotifications(limit, offset);

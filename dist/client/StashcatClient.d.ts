@@ -187,6 +187,7 @@ export declare class StashcatClient {
     listActiveDevices(): Promise<ActiveDevice[]>;
     deactivateDevice(deviceId: string): Promise<void>;
     storeProfileImage(imgBase64: string): Promise<void>;
+    resetProfileImage(): Promise<void>;
     getNotifications(limit?: number, offset?: number): Promise<Notification[]>;
     getNotificationCount(): Promise<number>;
     deleteNotification(notificationId: string): Promise<void>;

@@ -546,6 +546,11 @@ export class StashcatClient {
     return this.account.storeProfileImage(imgBase64);
   }
 
+  async resetProfileImage(): Promise<void> {
+    this.requireAuth();
+    return this.account.resetProfileImage();
+  }
+
   async getNotifications(limit?: number, offset?: number): Promise<Notification[]> {
     this.requireAuth();
     return this.account.getNotifications(limit, offset);
