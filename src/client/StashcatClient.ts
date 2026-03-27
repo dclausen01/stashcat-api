@@ -352,6 +352,7 @@ export class StashcatClient {
         }
       } else if (chatType === 'channel') {
         const ch = await this.channels.getChannelInfo(id, true);
+        console.log(`[getMessages:channel] id=${id} encrypted=${ch.encrypted} hasKey=${!!ch.key} keyLength=${ch.key?.length}`);
         if (ch.encrypted && ch.key) {
           aesKey = this.security.decryptConversationKey(ch.key, `channel_${id}`);
         }
