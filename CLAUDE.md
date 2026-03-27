@@ -9,6 +9,19 @@
 - **HTTP**: Axios with form-urlencoded POST requests
 - **Encryption**: Node.js built-in `crypto` (AES-256-CBC + RSA-4096 OAEP)
 
+## Environment Notes
+
+**Bash-Ausgaben funktionieren nicht** in dieser Claude-Code-Umgebung — `Bash` liefert immer `(Bash completed with no output)`. Stattdessen immer mit temporären Dateien arbeiten:
+
+```bash
+# Ausgabe in Datei umleiten und dann mit Read lesen
+some-command > /tmp/out.txt 2>&1
+# oder via git -C <path> für git-Befehle in anderen Repos
+git -C /path/to/repo status --short > /tmp/git_out.txt
+```
+
+Dann die Ausgabe mit dem `Read`-Tool lesen.
+
 ## Development Commands
 
 ```bash
