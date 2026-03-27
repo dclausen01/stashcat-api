@@ -22,6 +22,8 @@ git -C /path/to/repo status --short > /tmp/git_out.txt
 
 Dann die Ausgabe mit dem `Read`-Tool lesen.
 
+**Code-Verifikation**: Änderungen werden überprüft durch `npm run build` (muss fehlerfrei durchlaufen) und anschließend Live-Test auf dem Server, den der User durchführt. Kein automatischer Preview-Browser-Test.
+
 ## Development Commands
 
 ```bash
