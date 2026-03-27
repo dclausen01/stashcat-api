@@ -1,8 +1,12 @@
 /** Privacy type for a poll */
 export type PollPrivacyType = 'open' | 'hidden' | 'anonymous';
 
-/** Constraint/filter for listing polls */
-export type PollConstraint = 'createdByAndNotArchived' | 'invited' | 'archived' | string;
+/** Constraint/filter for listing polls (live-verified 2026-03-27) */
+export type PollConstraint =
+  | 'created_by_and_not_archived'   // Eigene, aktive Umfragen
+  | 'invited_and_not_archived'       // Von anderen eingeladene, aktive Umfragen
+  | 'archived_or_over'               // Archivierte oder abgelaufene Umfragen
+  | string;
 
 /** Invite target type for poll invitations */
 export type PollInviteTarget = 'channels' | 'users' | string;
