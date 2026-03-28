@@ -354,7 +354,14 @@ export class StashcatClient {
         const ch = await this.channels.getChannelInfo(id, true);
         console.log(`[getMessages:channel] id=${id} encrypted=${ch.encrypted} hasKey=${!!ch.key} keyLength=${ch.key?.length}`);
         if (ch.encrypted && ch.key) {
-          aesKey = this.security.decryptConversationKey(ch.key, `channel_${id}`);
+          // Channel keys are hex-encoded AES-256 keys (64 hex chars = 32 bytes), NOT RSA-encrypted
+          // Only decrypt with RSA if the key looks like base64 (longer than 64 chars)
+          if (ch.key.length > 64) {
+            aesKey = this.security.decryptConversationKey(ch.key, `channel_${id}`);
+          } else {
+            // Direct AES key — hex-decode
+            aesKey = Buffer.from(ch.key, 'hex');
+          }
         }
       }
     }
@@ -397,9 +404,11 @@ export class StashcatClient {
   }
 
   /**
-   * Decrypt a channel's AES key using the unlocked RSA private key.
-   * Returns the 32-byte AES key buffer. Result is cached by channel ID.
-   * Throws if E2E is not unlocked or the channel is not encrypted.
+   * Get a channel's AES key.
+   * For channel-type channels the key is a hex-encoded AES-256 key (64 hex chars, 32 bytes) — returned directly.
+   * For conversation-type channels the key is RSA-OAEP encrypted and must be decrypted with the private RSA key.
+   * Result is cached by channel ID.
+   * Throws if E2E is not unlocked (for RSA paths) or the channel is not encrypted.
    */
   async getChannelAesKey(channelId: string): Promise<Buffer> {
     this.requireAuth();
@@ -410,7 +419,9 @@ export class StashcatClient {
     if (!ch.encrypted || !ch.key) {
       throw new Error(`Channel ${channelId} is not encrypted or has no key`);
     }
-    return this.security.decryptConversationKey(ch.key, `channel_${channelId}`);
+    return ch.key.length > 64
+      ? this.security.decryptConversationKey(ch.key, `channel_${channelId}`)
+      : Buffer.from(ch.key, 'hex');
   }
 
   async sendMessage(options: SendMessageOptions): Promise<Message> {
