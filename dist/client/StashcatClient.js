@@ -381,6 +381,10 @@ class StashcatClient {
         this.requireAuth();
         return this.files.deleteFiles(fileIds);
     }
+    async deleteFolder(folderId) {
+        this.requireAuth();
+        return this.files.deleteFolder(folderId);
+    }
     async renameFile(fileId, name) {
         this.requireAuth();
         return this.files.renameFile(fileId, name);

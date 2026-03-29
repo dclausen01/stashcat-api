@@ -20,6 +20,8 @@ export declare class FileManager {
     getQuota(type: string, typeId: string): Promise<FileQuota>;
     /** Delete one or more files */
     deleteFiles(fileIds: string[]): Promise<void>;
+    /** Delete a folder */
+    deleteFolder(folderId: string): Promise<void>;
     /** Rename a file */
     renameFile(fileId: string, name: string): Promise<void>;
     /** Move a file to a different folder */
