@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build output
-dist/
+# dist/  <-- commented out: we need dist for GitHub installs
 build/
 
 # Environment variables
