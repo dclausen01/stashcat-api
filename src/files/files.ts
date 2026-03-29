@@ -245,6 +245,7 @@ export class FileManager {
         const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload` : `${baseUrl}/file/upload`;
 
         const res = await axios.post(url, formData, {
+          headers: { Accept: 'application/json' },
           timeout: 60000,
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
