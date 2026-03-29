@@ -204,6 +204,7 @@ export class FileManager {
 
     const contextRes = await this.api.post<UploadContextResponse>('/file/create_upload_context', contextData);
     const identifier = contextRes.identifier;
+    console.log('[create_upload_context] response identifier:', identifier);
 
     // Step 2: Upload chunks
     const fileStream = fs.readFileSync(filePath);
@@ -252,6 +253,7 @@ export class FileManager {
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
         });
+        console.log('[upload_chunk] response:', res.data);
 
         if (res.data?.payload?.file) {
           lastResponse = res.data.payload.file as FileInfo;
