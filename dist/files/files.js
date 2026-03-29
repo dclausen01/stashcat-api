@@ -251,8 +251,12 @@ class FileManager {
                     headers: { Accept: 'application/json' },
                     timeout: 60000,
                 });
+                console.log('Upload chunk response:', chunkNumber, 'status:', res.data?.status, 'payload keys:', Object.keys(res.data?.payload || {}));
                 if (res.data?.payload?.file) {
                     lastResponse = res.data.payload.file;
+                }
+                else if (res.data?.status?.value !== 'OK') {
+                    throw new Error(`API error: ${res.data?.status?.short_message || 'Unknown error'}`);
                 }
             }
             catch (error) {
