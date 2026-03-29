@@ -1,5 +1,5 @@
 import { StashcatAPI } from '../api/request';
-import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota } from './types';
+import { FileInfo, FolderContent, FolderEntry, FolderListOptions, FileUploadOptions, FileQuota } from './types';
 export declare class FileManager {
     private api;
     constructor(api: StashcatAPI);
@@ -26,6 +26,8 @@ export declare class FileManager {
     moveFile(fileId: string, parentId: string): Promise<void>;
     /** Copy a file to a folder in a channel or conversation */
     copyFile(fileId: string, folderId: string, type: string, typeId: string): Promise<void>;
+    /** Create a new folder */
+    createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;
     /**
      * Upload a file using resumable chunked upload.
      * Reads the file from disk and sends it in chunks to /file/upload.

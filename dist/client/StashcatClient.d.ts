@@ -5,7 +5,7 @@ import { SendMessageOptions } from '../chats/messages';
 import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
-import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota } from '../files/types';
+import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota, FolderEntry } from '../files/types';
 import { PrivateKeyResponse } from '../security/security';
 import { RealtimeManager } from '../realtime/realtime';
 import { RealtimeManagerOptions } from '../realtime/types';
@@ -150,9 +150,11 @@ export declare class StashcatClient {
      */
     getConversationAesKey(conversationId: string): Promise<Buffer>;
     /**
-     * Decrypt a channel's AES key using the unlocked RSA private key.
-     * Returns the 32-byte AES key buffer. Result is cached by channel ID.
-     * Throws if E2E is not unlocked or the channel is not encrypted.
+     * Get a channel's AES key.
+     * For channel-type channels the key is a hex-encoded AES-256 key (64 hex chars, 32 bytes) — returned directly.
+     * For conversation-type channels the key is RSA-OAEP encrypted and must be decrypted with the private RSA key.
+     * Result is cached by channel ID.
+     * Throws if E2E is not unlocked (for RSA paths) or the channel is not encrypted.
      */
     getChannelAesKey(channelId: string): Promise<Buffer>;
     sendMessage(options: SendMessageOptions): Promise<Message>;
@@ -180,6 +182,7 @@ export declare class StashcatClient {
     deleteFiles(fileIds: string[]): Promise<void>;
     renameFile(fileId: string, name: string): Promise<void>;
     moveFile(fileId: string, parentId: string): Promise<void>;
+    createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;
     getStorageQuota(type: string, typeId: string): Promise<FileQuota>;
     changeStatus(status: string): Promise<void>;
     changePassword(oldPassword: string, newPassword: string): Promise<void>;

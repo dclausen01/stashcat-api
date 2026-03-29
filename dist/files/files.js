@@ -167,6 +167,22 @@ class FileManager {
             throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : error}`);
         }
     }
+    /** Create a new folder */
+    async createFolder(name, parentId, type, typeId) {
+        const data = this.api.createAuthenticatedRequestData({
+            folder_name: name,
+            parent_id: parentId,
+            type,
+            type_id: typeId,
+        });
+        try {
+            const response = await this.api.post('/folder/create', data);
+            return response.payload.folder;
+        }
+        catch (error) {
+            throw new Error(`Failed to create folder: ${error instanceof Error ? error.message : error}`);
+        }
+    }
     /**
      * Upload a file using resumable chunked upload.
      * Reads the file from disk and sends it in chunks to /file/upload.

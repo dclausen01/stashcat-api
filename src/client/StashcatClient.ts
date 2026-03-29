@@ -10,7 +10,7 @@ import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
 import { AccountManager } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileManager } from '../files/files';
-import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota } from '../files/types';
+import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota, FolderEntry } from '../files/types';
 import { SecurityManager, PrivateKeyResponse } from '../security/security';
 import { RealtimeManager } from '../realtime/realtime';
 import { RealtimeManagerOptions } from '../realtime/types';
@@ -519,6 +519,11 @@ export class StashcatClient {
   async moveFile(fileId: string, parentId: string): Promise<void> {
     this.requireAuth();
     return this.files.moveFile(fileId, parentId);
+  }
+
+  async createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry> {
+    this.requireAuth();
+    return this.files.createFolder(name, parentId, type, typeId);
   }
 
   async getStorageQuota(type: string, typeId: string): Promise<FileQuota> {

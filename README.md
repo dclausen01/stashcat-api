@@ -9,7 +9,7 @@ A TypeScript API client library for [Stashcat](https://www.stashcat.com/) messen
 - Conversations (list, create, archive, favorites)
 - Messages (read, send, delete, like, flag)
 - File management (upload, download, rename, move, delete, folders)
-- E2E encryption (RSA-4096 OAEP + AES-256-CBC) with automatic decryption
+- E2E encryption (RSA-4096 OAEP + AES-256-CBC) with automatic decryption — **note: channel keys are hex-encoded AES-256 keys (64 hex chars), not RSA-encrypted**
 - Company discovery and member listing
 - Real-time events via Socket.io (push.stashcat.com)
 - Broadcast lists (create, manage members, send messages)
@@ -76,8 +76,9 @@ STASHCAT_SECURITY_PASSWORD=                   # Optional; defaults to STASHCAT_P
 Stashcat uses RSA-4096 + AES-256-CBC for end-to-end encryption:
 
 1. Each user has an RSA-4096 keypair (private key stored encrypted on the server)
-2. Each encrypted channel/conversation has a per-chat AES-256 key (RSA-OAEP encrypted with the user's public key)
-3. Messages are AES-256-CBC encrypted with the chat's AES key
+2. Each encrypted **conversation** has a per-chat AES-256 key — RSA-OAEP encrypted with the user's public key, stored in `conversation.key` (base64, ~344 chars).
+3. Each encrypted **channel** has a per-channel AES-256 key stored as a **64-character hex string** (32 bytes, not RSA-encrypted). The API returns `"key":"<64-hex-chars>"`.
+4. Messages are AES-256-CBC encrypted with the chat's AES key
 
 ```typescript
 // Option A: Unlock during login

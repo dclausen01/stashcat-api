@@ -427,15 +427,23 @@ crypto.createPrivateKey({ key: pem, format: 'pem', passphrase: Buffer.from(secur
 
 ### Conversation & Channel Keys
 
-Both conversations and channels use the **same mechanism**: a `key` field (base64, 512 bytes = RSA-4096 output):
+**Conversations**: `conversation.key` is a per-conversation AES-256 key, RSA-OAEP encrypted (base64, ~344 chars):
 ```typescript
 crypto.privateDecrypt({ key: rsaPrivateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, encryptedKeyBuffer)
 // → 32-byte AES key Buffer
 ```
 
-- `conversation.key` — per-conversation AES key, RSA-OAEP encrypted
-- `channel.key` — per-channel AES key, RSA-OAEP encrypted (null for non-encrypted channels)
-- Both are cached by `SecurityManager` (channels with `channel_` prefix to avoid ID collisions)
+**Channels**: `channel.key` is a **64-character hex string** (32 bytes, direct AES key — NOT RSA-encrypted). The API returns `"encryption":"AES 256"` and `"key":"<64-hex>"`
+```typescript
+// Detect: if key.length > 64 → RSA-OAEP encrypted (conversation); else → direct hex AES key (channel)
+const aesKey = ch.key.length > 64
+  ? this.security.decryptConversationKey(ch.key, `channel_${id}`)
+  : Buffer.from(ch.key, 'hex');
+```
+
+- `channel.key` — per-channel AES key, direct hex encoding (null for non-encrypted channels)
+- `conversation.key` — per-conversation AES key, RSA-OAEP encrypted (base64)
+- Channel keys are cached by `SecurityManager` with `channel_` prefix
 
 ### Full Decryption Flow
 

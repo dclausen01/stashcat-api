@@ -156,6 +156,8 @@ export interface Message {
     confirmation_required?: boolean;
     thread_id?: string;
     is_deleted_by_manager?: boolean;
+    /** Message was deleted by the user */
+    deleted?: boolean;
     has_file_attached?: boolean;
 }
 export interface MessageLiker {
