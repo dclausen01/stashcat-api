@@ -209,9 +209,9 @@ export class FileManager {
       formData.append('resumableRelativePath', filename);
       formData.append('resumableTotalChunks', String(totalChunks));
 
-      // Target context
-      formData.append('type', uploadOptions.type);
-      formData.append('type_id', uploadOptions.type_id);
+      // Target context - Stashcat upload uses folder_type, folder_type_id, folder_id
+      formData.append('folder_type', uploadOptions.type);
+      formData.append('folder_type_id', uploadOptions.type_id ?? '');
       if (uploadOptions.folder) formData.append('folder_id', uploadOptions.folder);
       if (uploadOptions.encrypted !== undefined) formData.append('encrypted', String(uploadOptions.encrypted));
       if (uploadOptions.iv) formData.append('iv', uploadOptions.iv);
