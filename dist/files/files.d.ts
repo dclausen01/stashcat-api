@@ -31,12 +31,12 @@ export declare class FileManager {
     /** Create a new folder */
     createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;
     /**
-     * Upload a file using resumable chunked upload.
-     * Reads the file from disk and sends it in chunks to /file/upload.
+     * Upload a file using Stashcat's resumable upload API.
+     * Flow: 1) create_upload_context → 2) upload chunks → 3) return file info
      *
      * @param filePath Absolute or relative path to the file on disk
      * @param uploadOptions Target channel/conversation and optional encryption settings
-     * @param chunkSize Chunk size in bytes (default 1 MB)
+     * @param chunkSize Chunk size in bytes (default 5 MB to match Stashcat)
      */
     uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize?: number): Promise<FileInfo>;
     private guessMimeType;

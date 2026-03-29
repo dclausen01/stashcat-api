@@ -172,22 +172,42 @@ export class FileManager {
   }
 
   /**
-   * Upload a file using resumable chunked upload.
-   * Reads the file from disk and sends it in chunks to /file/upload.
+   * Upload a file using Stashcat's resumable upload API.
+   * Flow: 1) create_upload_context → 2) upload chunks → 3) return file info
    *
    * @param filePath Absolute or relative path to the file on disk
    * @param uploadOptions Target channel/conversation and optional encryption settings
-   * @param chunkSize Chunk size in bytes (default 1 MB)
+   * @param chunkSize Chunk size in bytes (default 5 MB to match Stashcat)
    */
-  async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize = 1024 * 1024): Promise<FileInfo> {
+  async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize = 5 * 1024 * 1024): Promise<FileInfo> {
     const filename = uploadOptions.filename || path.basename(filePath);
     const stats = fs.statSync(filePath);
     const totalSize = stats.size;
     const totalChunks = Math.ceil(totalSize / chunkSize);
-    const identifier = crypto.randomBytes(16).toString('hex');
 
+    // Step 1: Create upload context
+    const contextData = this.api.createAuthenticatedRequestData({
+      filename: filename,
+      mime: this.guessMimeType(filename),
+      filesize: totalSize,
+      num_total_chunks: totalChunks,
+      chunk_size: chunkSize,
+      folder_type: uploadOptions.type,
+      folder_type_id: uploadOptions.type_id ?? '',
+      ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
+    });
+
+    interface UploadContextResponse {
+      payload: {
+        identifier: string;
+      };
+    }
+
+    const contextRes = await this.api.post<UploadContextResponse>('/file/create_upload_context', contextData);
+    const identifier = contextRes.payload.identifier;
+
+    // Step 2: Upload chunks
     const fileStream = fs.readFileSync(filePath);
-
     let lastResponse: FileInfo | undefined;
 
     for (let chunkNumber = 1; chunkNumber <= totalChunks; chunkNumber++) {
@@ -198,7 +218,7 @@ export class FileManager {
 
       const formData = new FormData();
 
-      // Resumable.js-compatible fields
+      // Resumable.js-compatible fields (using server-provided identifier)
       formData.append('resumableChunkNumber', String(chunkNumber));
       formData.append('resumableChunkSize', String(chunkSize));
       formData.append('resumableCurrentChunkSize', String(currentChunkSize));
@@ -209,14 +229,10 @@ export class FileManager {
       formData.append('resumableRelativePath', filename);
       formData.append('resumableTotalChunks', String(totalChunks));
 
-      // Target context - Stashcat upload uses folder_type, folder_type_id, folder_id
+      // Target context
       formData.append('folder_type', uploadOptions.type);
       formData.append('folder_type_id', uploadOptions.type_id ?? '');
       if (uploadOptions.folder) formData.append('folder_id', uploadOptions.folder);
-      if (uploadOptions.encrypted !== undefined) formData.append('encrypted', String(uploadOptions.encrypted));
-      if (uploadOptions.iv) formData.append('iv', uploadOptions.iv);
-      if (uploadOptions.media_width) formData.append('media_width', String(uploadOptions.media_width));
-      if (uploadOptions.media_height) formData.append('media_height', String(uploadOptions.media_height));
 
       // Auth
       formData.append('client_key', this.api.getClientKey() || '');
@@ -234,8 +250,6 @@ export class FileManager {
           headers: { Accept: 'application/json' },
           timeout: 60000,
         });
-
-        console.log('Upload chunk response:', chunkNumber, 'status:', res.data?.status, 'payload keys:', Object.keys(res.data?.payload || {}));
 
         if (res.data?.payload?.file) {
           lastResponse = res.data.payload.file as FileInfo;
