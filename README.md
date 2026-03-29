@@ -181,6 +181,7 @@ await client.uploadFile(filePath, {
 
 await client.listFolder({ type: 'channel', type_id: channelId });
 await client.listPersonalFiles();
+await client.createFolder('New Folder', '0', 'channel', channelId);  // parent_id, type, type_id
 await client.getFileInfo(fileId);
 await client.renameFile(fileId, 'new-name.txt');
 await client.moveFile(fileId, parentFolderId);
