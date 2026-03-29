@@ -164,8 +164,8 @@ export class FileManager {
       type_id: typeId,
     });
     try {
-      const response = await this.api.post<{ payload: { folder: FolderEntry } }>('/folder/create', data);
-      return response.payload.folder;
+      const response = await this.api.post<{ folder: FolderEntry }>('/folder/create', data);
+      return response.folder;
     } catch (error) {
       throw new Error(`Failed to create folder: ${error instanceof Error ? error.message : error}`);
     }
@@ -198,13 +198,11 @@ export class FileManager {
     });
 
     interface UploadContextResponse {
-      payload: {
-        identifier: string;
-      };
+      identifier: string;
     }
 
     const contextRes = await this.api.post<UploadContextResponse>('/file/create_upload_context', contextData);
-    const identifier = contextRes.payload.identifier;
+    const identifier = contextRes.identifier;
 
     // Step 2: Upload chunks
     const fileStream = fs.readFileSync(filePath);
