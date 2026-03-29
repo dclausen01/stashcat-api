@@ -206,7 +206,7 @@ class FileManager {
         const totalSize = stats.size;
         const totalChunks = Math.ceil(totalSize / chunkSize);
         // Step 1: Create upload context
-        const logFile = '/tmp/stashcat-upload-debug.log';
+        const logFile = './upload-debug.log';
         const log = (msg) => {
             const timestamp = new Date().toISOString();
             const line = `[${timestamp}] ${msg}\n`;
