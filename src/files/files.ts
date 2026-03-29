@@ -212,7 +212,7 @@ export class FileManager {
       // Target context
       formData.append('type', uploadOptions.type);
       formData.append('type_id', uploadOptions.type_id);
-      if (uploadOptions.folder) formData.append('folder', uploadOptions.folder);
+      if (uploadOptions.folder) formData.append('folder_id', uploadOptions.folder);
       if (uploadOptions.encrypted !== undefined) formData.append('encrypted', String(uploadOptions.encrypted));
       if (uploadOptions.iv) formData.append('iv', uploadOptions.iv);
       if (uploadOptions.media_width) formData.append('media_width', String(uploadOptions.media_width));

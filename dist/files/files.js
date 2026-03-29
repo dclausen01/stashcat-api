@@ -229,7 +229,7 @@ class FileManager {
             formData.append('type', uploadOptions.type);
             formData.append('type_id', uploadOptions.type_id);
             if (uploadOptions.folder)
-                formData.append('folder', uploadOptions.folder);
+                formData.append('folder_id', uploadOptions.folder);
             if (uploadOptions.encrypted !== undefined)
                 formData.append('encrypted', String(uploadOptions.encrypted));
             if (uploadOptions.iv)
@@ -288,4 +288,4 @@ class FileManager {
     }
 }
 exports.FileManager = FileManager;
-//# sourceMappingURL=files.js.map// Built So 29. Mär 14:27:42 CEST 2026
+//# sourceMappingURL=files.js.map
