@@ -241,7 +241,7 @@ class FileManager {
             formData.append('folder_type', uploadOptions.type);
             formData.append('folder_type_id', uploadOptions.type_id ?? '');
             if (uploadOptions.folder)
-                formData.append('folder_id', uploadOptions.folder);
+                formData.append('folder_id', String(uploadOptions.folder));
             // Auth
             formData.append('client_key', this.api.getClientKey() || '');
             formData.append('device_id', this.api.getDeviceId());
