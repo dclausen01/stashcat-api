@@ -186,14 +186,6 @@ export class FileManager {
     const totalChunks = Math.ceil(totalSize / chunkSize);
 
     // Step 1: Create upload context
-    const logFile = './upload-debug.log';
-    const log = (msg: string) => {
-      const timestamp = new Date().toISOString();
-      const line = `[${timestamp}] ${msg}\n`;
-      console.log(line.trim());
-      require('fs').appendFileSync(logFile, line);
-    };
-
     const contextData = this.api.createAuthenticatedRequestData({
       filename: filename,
       mime: this.guessMimeType(filename),
@@ -204,7 +196,6 @@ export class FileManager {
       folder_type_id: uploadOptions.type_id ?? '',
       ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
     });
-    log(`[create_upload_context] data: ${JSON.stringify(contextData)}`);
 
     interface UploadContextResponse {
       identifier: string;
@@ -212,7 +203,6 @@ export class FileManager {
 
     const contextRes = await this.api.post<UploadContextResponse>('/file/create_upload_context', contextData);
     const identifier = contextRes.identifier;
-    log(`[create_upload_context] response identifier: ${identifier}`);
 
     // Step 2: Upload chunks
     const fileStream = fs.readFileSync(filePath);
@@ -241,7 +231,6 @@ export class FileManager {
       formData.append('folder_type', uploadOptions.type);
       formData.append('folder_type_id', uploadOptions.type_id ?? '');
       if (uploadOptions.folder) formData.append('folder_id', String(uploadOptions.folder));
-      log(`[upload_chunk] folder_type=${uploadOptions.type} folder_type_id=${uploadOptions.type_id} folder_id=${uploadOptions.folder}`);
 
       // Auth
       formData.append('client_key', this.api.getClientKey() || '');
@@ -253,7 +242,7 @@ export class FileManager {
 
       try {
         const baseUrl = this.api.getBaseUrl();
-        const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload` : `${baseUrl}/file/upload`;
+        const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload_chunk` : `${baseUrl}/file/upload_chunk`;
 
         const res = await axios.post(url, formData, {
           headers: { Accept: 'application/json' },
@@ -261,7 +250,6 @@ export class FileManager {
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
         });
-        log(`[upload_chunk] response: ${JSON.stringify(res.data).slice(0, 500)}`);
 
         if (res.data?.payload?.file) {
           lastResponse = res.data.payload.file as FileInfo;

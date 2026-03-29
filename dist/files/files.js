@@ -206,13 +206,6 @@ class FileManager {
         const totalSize = stats.size;
         const totalChunks = Math.ceil(totalSize / chunkSize);
         // Step 1: Create upload context
-        const logFile = './upload-debug.log';
-        const log = (msg) => {
-            const timestamp = new Date().toISOString();
-            const line = `[${timestamp}] ${msg}\n`;
-            console.log(line.trim());
-            require('fs').appendFileSync(logFile, line);
-        };
         const contextData = this.api.createAuthenticatedRequestData({
             filename: filename,
             mime: this.guessMimeType(filename),
@@ -223,10 +216,8 @@ class FileManager {
             folder_type_id: uploadOptions.type_id ?? '',
             ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
         });
-        log(`[create_upload_context] data: ${JSON.stringify(contextData)}`);
         const contextRes = await this.api.post('/file/create_upload_context', contextData);
         const identifier = contextRes.identifier;
-        log(`[create_upload_context] response identifier: ${identifier}`);
         // Step 2: Upload chunks
         const fileStream = fs.readFileSync(filePath);
         let lastResponse;
@@ -251,7 +242,6 @@ class FileManager {
             formData.append('folder_type_id', uploadOptions.type_id ?? '');
             if (uploadOptions.folder)
                 formData.append('folder_id', String(uploadOptions.folder));
-            log(`[upload_chunk] folder_type=${uploadOptions.type} folder_type_id=${uploadOptions.type_id} folder_id=${uploadOptions.folder}`);
             // Auth
             formData.append('client_key', this.api.getClientKey() || '');
             formData.append('device_id', this.api.getDeviceId());
@@ -260,14 +250,13 @@ class FileManager {
             formData.append('file', blob, filename);
             try {
                 const baseUrl = this.api.getBaseUrl();
-                const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload` : `${baseUrl}/file/upload`;
+                const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload_chunk` : `${baseUrl}/file/upload_chunk`;
                 const res = await axios_1.default.post(url, formData, {
                     headers: { Accept: 'application/json' },
                     timeout: 60000,
                     maxBodyLength: Infinity,
                     maxContentLength: Infinity,
                 });
-                log(`[upload_chunk] response: ${JSON.stringify(res.data).slice(0, 500)}`);
                 if (res.data?.payload?.file) {
                     lastResponse = res.data.payload.file;
                 }
