@@ -133,7 +133,7 @@ class FileManager {
     }
     /** Delete a folder */
     async deleteFolder(folderId) {
-        const data = this.api.createAuthenticatedRequestData({ folder_id: folderId });
+        const data = this.api.createAuthenticatedRequestData({ folder_id: String(folderId) });
         try {
             await this.api.post('/folder/delete', data);
         }
@@ -165,7 +165,7 @@ class FileManager {
     async copyFile(fileId, folderId, type, typeId) {
         const data = this.api.createAuthenticatedRequestData({
             file_id: fileId,
-            folder_id: folderId,
+            folder_id: String(folderId),
             type,
             type_id: typeId,
         });
@@ -186,7 +186,7 @@ class FileManager {
         });
         try {
             const response = await this.api.post('/folder/create', data);
-            return response.payload.folder;
+            return response.folder;
         }
         catch (error) {
             throw new Error(`Failed to create folder: ${error instanceof Error ? error.message : error}`);
@@ -217,7 +217,7 @@ class FileManager {
             ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
         });
         const contextRes = await this.api.post('/file/create_upload_context', contextData);
-        const identifier = contextRes.payload.identifier;
+        const identifier = contextRes.identifier;
         // Step 2: Upload chunks
         const fileStream = fs.readFileSync(filePath);
         let lastResponse;

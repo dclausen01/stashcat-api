@@ -111,8 +111,8 @@ export class FileManager {
   }
 
   /** Delete a folder */
-  async deleteFolder(folderId: string): Promise<void> {
-    const data = this.api.createAuthenticatedRequestData({ folder_id: folderId });
+  async deleteFolder(folderId: number): Promise<void> {
+    const data = this.api.createAuthenticatedRequestData({ folder_id: String(folderId) });
     try {
       await this.api.post('/folder/delete', data);
     } catch (error) {
@@ -141,10 +141,10 @@ export class FileManager {
   }
 
   /** Copy a file to a folder in a channel or conversation */
-  async copyFile(fileId: string, folderId: string, type: string, typeId: string): Promise<void> {
+  async copyFile(fileId: string, folderId: number, type: string, typeId: string): Promise<void> {
     const data = this.api.createAuthenticatedRequestData({
       file_id: fileId,
-      folder_id: folderId,
+      folder_id: String(folderId),
       type,
       type_id: typeId,
     });

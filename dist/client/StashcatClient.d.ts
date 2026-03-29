@@ -180,7 +180,7 @@ export declare class StashcatClient {
     /** Listet die persönliche Ablage des eingeloggten Nutzers ("Meine Dateien") */
     listPersonalFiles(options?: Omit<FolderListOptions, 'type' | 'type_id'>): Promise<FolderContent>;
     deleteFiles(fileIds: string[]): Promise<void>;
-    deleteFolder(folderId: string): Promise<void>;
+    deleteFolder(folderId: number): Promise<void>;
     renameFile(fileId: string, name: string): Promise<void>;
     moveFile(fileId: string, parentId: string): Promise<void>;
     createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;

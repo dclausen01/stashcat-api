@@ -511,7 +511,7 @@ export class StashcatClient {
     return this.files.deleteFiles(fileIds);
   }
 
-  async deleteFolder(folderId: string): Promise<void> {
+  async deleteFolder(folderId: number): Promise<void> {
     this.requireAuth();
     return this.files.deleteFolder(folderId);
   }

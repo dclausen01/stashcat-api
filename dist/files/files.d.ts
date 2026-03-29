@@ -21,13 +21,13 @@ export declare class FileManager {
     /** Delete one or more files */
     deleteFiles(fileIds: string[]): Promise<void>;
     /** Delete a folder */
-    deleteFolder(folderId: string): Promise<void>;
+    deleteFolder(folderId: number): Promise<void>;
     /** Rename a file */
     renameFile(fileId: string, name: string): Promise<void>;
     /** Move a file to a different folder */
     moveFile(fileId: string, parentId: string): Promise<void>;
     /** Copy a file to a folder in a channel or conversation */
-    copyFile(fileId: string, folderId: string, type: string, typeId: string): Promise<void>;
+    copyFile(fileId: string, folderId: number, type: string, typeId: string): Promise<void>;
     /** Create a new folder */
     createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;
     /**

@@ -112,7 +112,7 @@ export interface FileUploadOptions {
     type: FileStorageType | string;
     /** ID des Channels/der Konversation; bei type='user' nicht erforderlich */
     type_id?: string;
-    folder?: string;
+    folder?: number;
     encrypted?: boolean;
     iv?: string;
     media_width?: number;
