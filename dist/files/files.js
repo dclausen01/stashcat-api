@@ -252,8 +252,9 @@ class FileManager {
                 const baseUrl = this.api.getBaseUrl();
                 const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload` : `${baseUrl}/file/upload`;
                 const res = await axios_1.default.post(url, formData, {
-                    headers: { Accept: 'application/json' },
                     timeout: 60000,
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
                 });
                 if (res.data?.payload?.file) {
                     lastResponse = res.data.payload.file;
