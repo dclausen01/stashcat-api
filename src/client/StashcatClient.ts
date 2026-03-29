@@ -511,6 +511,11 @@ export class StashcatClient {
     return this.files.deleteFiles(fileIds);
   }
 
+  async deleteFolder(folderId: string): Promise<void> {
+    this.requireAuth();
+    return this.files.deleteFolder(folderId);
+  }
+
   async renameFile(fileId: string, name: string): Promise<void> {
     this.requireAuth();
     return this.files.renameFile(fileId, name);

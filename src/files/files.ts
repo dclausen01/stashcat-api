@@ -110,6 +110,16 @@ export class FileManager {
     }
   }
 
+  /** Delete a folder */
+  async deleteFolder(folderId: string): Promise<void> {
+    const data = this.api.createAuthenticatedRequestData({ folder_id: folderId });
+    try {
+      await this.api.post('/folder/delete', data);
+    } catch (error) {
+      throw new Error(`Failed to delete folder: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
   /** Rename a file */
   async renameFile(fileId: string, name: string): Promise<void> {
     const data = this.api.createAuthenticatedRequestData({ file_id: fileId, name });
