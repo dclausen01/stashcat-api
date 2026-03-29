@@ -176,6 +176,7 @@ await client.downloadFile(file, aesKey);
 await client.uploadFile(filePath, {
   type: 'channel',
   type_id: channelId,
+  folder: 12345,           // optional: target folder ID (number)
   filename: 'report.pdf',  // optional: preserves the original filename
 });
 
@@ -188,6 +189,21 @@ await client.moveFile(fileId, parentFolderId);
 await client.deleteFiles([fileId]);
 await client.getStorageQuota('channel', channelId);
 ```
+
+#### Upload Implementation Details
+
+The `uploadFile()` method uses Stashcat's resumable chunked upload API:
+
+1. **Create upload context** (`POST /file/create_upload_context`):
+   - URL-encoded request with `filename`, `mime`, `filesize`, `num_total_chunks`, `chunk_size`, `folder_type`, `folder_type_id`, `folder_id` (optional), plus auth fields
+   - Returns an `identifier` for the upload session
+
+2. **Upload chunks** (`POST /file/upload_chunk`):
+   - Multipart/form-data with fields: `client_key`, `device_id`, `identifier`, `current_chunk_number`, `current_chunk_size`
+   - File chunk as field name `-` with `Content-Type: application/octet-stream`
+   - The `identifier` links the chunk to the context; folder info is NOT repeated
+
+Default chunk size is 5 MB. The implementation uses the `form-data` package for correct multipart encoding in Node.js.
 
 ### Calendar
 

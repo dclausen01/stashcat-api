@@ -40,6 +40,7 @@ exports.FileManager = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const axios_1 = __importDefault(require("axios"));
+const form_data_1 = __importDefault(require("form-data"));
 class FileManager {
     constructor(api) {
         this.api = api;
@@ -214,7 +215,7 @@ class FileManager {
             chunk_size: chunkSize,
             folder_type: uploadOptions.type,
             folder_type_id: uploadOptions.type_id ?? '',
-            ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
+            ...(uploadOptions.folder ? { folder_id: String(uploadOptions.folder) } : {}),
         });
         const contextRes = await this.api.post('/file/create_upload_context', contextData);
         const identifier = contextRes.identifier;
@@ -226,35 +227,26 @@ class FileManager {
             const end = Math.min(start + chunkSize, totalSize);
             const chunk = fileStream.slice(start, end);
             const currentChunkSize = end - start;
-            const formData = new FormData();
-            // Resumable.js-compatible fields (using server-provided identifier)
-            formData.append('resumableChunkNumber', String(chunkNumber));
-            formData.append('resumableChunkSize', String(chunkSize));
-            formData.append('resumableCurrentChunkSize', String(currentChunkSize));
-            formData.append('resumableTotalSize', String(totalSize));
-            formData.append('resumableType', this.guessMimeType(filename));
-            formData.append('resumableIdentifier', identifier);
-            formData.append('resumableFilename', filename);
-            formData.append('resumableRelativePath', filename);
-            formData.append('resumableTotalChunks', String(totalChunks));
-            // Also send identifier without resumable prefix (required by API)
-            formData.append('identifier', identifier);
-            // Target context
-            formData.append('folder_type', uploadOptions.type);
-            formData.append('folder_type_id', uploadOptions.type_id ?? '');
-            if (uploadOptions.folder)
-                formData.append('folder_id', String(uploadOptions.folder));
-            // Auth
+            // FormData with exact fields from original request (upload_chunk.log)
+            const formData = new form_data_1.default();
             formData.append('client_key', this.api.getClientKey() || '');
             formData.append('device_id', this.api.getDeviceId());
-            // File chunk
-            const blob = new Blob([chunk], { type: this.guessMimeType(filename) });
-            formData.append('file', blob, filename);
+            formData.append('identifier', identifier);
+            formData.append('current_chunk_number', String(chunkNumber));
+            formData.append('current_chunk_size', String(currentChunkSize));
+            // File chunk with field name "-" and Content-Type: application/octet-stream
+            formData.append('-', chunk, {
+                filename: filename,
+                contentType: 'application/octet-stream',
+            });
             try {
                 const baseUrl = this.api.getBaseUrl();
                 const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload_chunk` : `${baseUrl}/file/upload_chunk`;
                 const res = await axios_1.default.post(url, formData, {
-                    headers: { Accept: 'application/json' },
+                    headers: {
+                        ...formData.getHeaders(),
+                        Accept: 'application/json',
+                    },
                     timeout: 60000,
                     maxBodyLength: Infinity,
                     maxContentLength: Infinity,

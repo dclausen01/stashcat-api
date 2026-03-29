@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import axios from 'axios';
+import FormData from 'form-data';
 import { StashcatAPI } from '../api/request';
 import { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota } from './types';
 
@@ -194,7 +195,7 @@ export class FileManager {
       chunk_size: chunkSize,
       folder_type: uploadOptions.type,
       folder_type_id: uploadOptions.type_id ?? '',
-      ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
+      ...(uploadOptions.folder ? { folder_id: String(uploadOptions.folder) } : {}),
     });
 
     interface UploadContextResponse {
@@ -214,40 +215,29 @@ export class FileManager {
       const chunk = fileStream.slice(start, end);
       const currentChunkSize = end - start;
 
+      // FormData with exact fields from original request (upload_chunk.log)
       const formData = new FormData();
-
-      // Resumable.js-compatible fields (using server-provided identifier)
-      formData.append('resumableChunkNumber', String(chunkNumber));
-      formData.append('resumableChunkSize', String(chunkSize));
-      formData.append('resumableCurrentChunkSize', String(currentChunkSize));
-      formData.append('resumableTotalSize', String(totalSize));
-      formData.append('resumableType', this.guessMimeType(filename));
-      formData.append('resumableIdentifier', identifier);
-      formData.append('resumableFilename', filename);
-      formData.append('resumableRelativePath', filename);
-      formData.append('resumableTotalChunks', String(totalChunks));
-      // Also send identifier without resumable prefix (required by API)
-      formData.append('identifier', identifier);
-
-      // Target context
-      formData.append('folder_type', uploadOptions.type);
-      formData.append('folder_type_id', uploadOptions.type_id ?? '');
-      if (uploadOptions.folder) formData.append('folder_id', String(uploadOptions.folder));
-
-      // Auth
       formData.append('client_key', this.api.getClientKey() || '');
       formData.append('device_id', this.api.getDeviceId());
+      formData.append('identifier', identifier);
+      formData.append('current_chunk_number', String(chunkNumber));
+      formData.append('current_chunk_size', String(currentChunkSize));
 
-      // File chunk
-      const blob = new Blob([chunk], { type: this.guessMimeType(filename) });
-      formData.append('file', blob, filename);
+      // File chunk with field name "-" and Content-Type: application/octet-stream
+      formData.append('-', chunk, {
+        filename: filename,
+        contentType: 'application/octet-stream',
+      });
 
       try {
         const baseUrl = this.api.getBaseUrl();
         const url = baseUrl.endsWith('/') ? `${baseUrl}file/upload_chunk` : `${baseUrl}/file/upload_chunk`;
 
         const res = await axios.post(url, formData, {
-          headers: { Accept: 'application/json' },
+          headers: {
+            ...formData.getHeaders(),
+            Accept: 'application/json',
+          },
           timeout: 60000,
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
