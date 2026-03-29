@@ -226,6 +226,8 @@ export class FileManager {
       formData.append('resumableFilename', filename);
       formData.append('resumableRelativePath', filename);
       formData.append('resumableTotalChunks', String(totalChunks));
+      // Also send identifier without resumable prefix (required by API)
+      formData.append('identifier', identifier);
 
       // Target context
       formData.append('folder_type', uploadOptions.type);
