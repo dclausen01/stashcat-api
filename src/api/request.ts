@@ -44,9 +44,25 @@ export class StashcatAPI {
 
   async post<T>(path: string, data: unknown): Promise<T> {
     try {
+      // Convert object to URLSearchParams for form-urlencoded
+      let formData: string | URLSearchParams;
+      if (typeof data === 'object' && data !== null) {
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+          if (Array.isArray(value)) {
+            params.append(key, JSON.stringify(value));
+          } else if (value !== undefined && value !== null) {
+            params.append(key, String(value));
+          }
+        }
+        formData = params;
+      } else {
+        formData = String(data);
+      }
+
       const response: AxiosResponse<APIResponse> = await this.client.post(
         this.buildUrl(path),
-        data,
+        formData,
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
