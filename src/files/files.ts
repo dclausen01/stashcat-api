@@ -196,6 +196,7 @@ export class FileManager {
       folder_type_id: uploadOptions.type_id ?? '',
       ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
     });
+    console.log('[create_upload_context] data:', contextData);
 
     interface UploadContextResponse {
       identifier: string;
@@ -231,6 +232,7 @@ export class FileManager {
       formData.append('folder_type', uploadOptions.type);
       formData.append('folder_type_id', uploadOptions.type_id ?? '');
       if (uploadOptions.folder) formData.append('folder_id', String(uploadOptions.folder));
+      console.log('[upload_chunk] folder_type=', uploadOptions.type, 'folder_type_id=', uploadOptions.type_id, 'folder_id=', uploadOptions.folder);
 
       // Auth
       formData.append('client_key', this.api.getClientKey() || '');

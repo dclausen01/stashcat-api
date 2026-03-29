@@ -216,6 +216,7 @@ class FileManager {
             folder_type_id: uploadOptions.type_id ?? '',
             ...(uploadOptions.folder ? { folder_id: uploadOptions.folder } : {}),
         });
+        console.log('[create_upload_context] data:', contextData);
         const contextRes = await this.api.post('/file/create_upload_context', contextData);
         const identifier = contextRes.identifier;
         // Step 2: Upload chunks
@@ -242,6 +243,7 @@ class FileManager {
             formData.append('folder_type_id', uploadOptions.type_id ?? '');
             if (uploadOptions.folder)
                 formData.append('folder_id', String(uploadOptions.folder));
+            console.log('[upload_chunk] folder_type=', uploadOptions.type, 'folder_type_id=', uploadOptions.type_id, 'folder_id=', uploadOptions.folder);
             // Auth
             formData.append('client_key', this.api.getClientKey() || '');
             formData.append('device_id', this.api.getDeviceId());
