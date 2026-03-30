@@ -182,7 +182,7 @@ export class FileManager {
    */
   async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize = 5 * 1024 * 1024): Promise<FileInfo> {
     const filename = uploadOptions.filename || path.basename(filePath);
-    const stats = fs.statSync(filePath);
+    const stats = await fs.promises.stat(filePath);
     const totalSize = stats.size;
     const totalChunks = Math.ceil(totalSize / chunkSize);
 
@@ -206,14 +206,19 @@ export class FileManager {
     const identifier = contextRes.identifier;
 
     // Step 2: Upload chunks
-    const fileStream = fs.readFileSync(filePath);
     let lastResponse: FileInfo | undefined;
 
     for (let chunkNumber = 1; chunkNumber <= totalChunks; chunkNumber++) {
       const start = (chunkNumber - 1) * chunkSize;
       const end = Math.min(start + chunkSize, totalSize);
-      const chunk = fileStream.slice(start, end);
       const currentChunkSize = end - start;
+      const chunk = Buffer.alloc(currentChunkSize);
+      const fd = await fs.promises.open(filePath, 'r');
+      try {
+        await fd.read(chunk, 0, currentChunkSize, start);
+      } finally {
+        await fd.close();
+      }
 
       // FormData with exact fields from original request (upload_chunk.log)
       const formData = new FormData();

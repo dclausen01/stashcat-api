@@ -91,7 +91,6 @@ export class SecurityManager {
     }
     if (cacheId) {
       const cached = this.aesKeyCache.get(cacheId);
-      console.log(`[decryptConversationKey] cacheId=${cacheId} cacheHit=${!!cached} cacheSize=${this.aesKeyCache.size}`);
       if (cached) return cached;
     }
     const encryptedBuffer = Buffer.from(encryptedKeyBase64, 'base64');
