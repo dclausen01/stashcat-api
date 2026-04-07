@@ -25,7 +25,7 @@ export class RealtimeManager {
   private clientKey: string;
   private deviceId: string;
   private hiddenId: string;   // socket_id aus /users/me — wird als hidden_id beim Auth-Emit genutzt
-  private options: Required<RealtimeManagerOptions>;
+  private options: Omit<Required<RealtimeManagerOptions>, 'onAnyEvent'> & { onAnyEvent?: (event: string, args: unknown[]) => void };
   private handlers = new Map<string, Set<EventHandler>>();
   private discoveredEvents = new Set<string>();
 
@@ -42,6 +42,7 @@ export class RealtimeManager {
       pushUrl: options.pushUrl ?? 'https://push.stashcat.com',
       reconnect: options.reconnect ?? true,
       debug: options.debug ?? false,
+      onAnyEvent: options.onAnyEvent,
     };
   }
 
@@ -94,11 +95,13 @@ export class RealtimeManager {
         this.socket.onAny((event, ...args) => {
           this.discoveredEvents.add(event);
           console.log(`[Realtime] 📡 "${event}"`, JSON.stringify(args).slice(0, 200));
+          this.options.onAnyEvent?.(event, args);
         });
       } else {
         // Auch ohne Debug alle Event-Namen tracken
-        this.socket.onAny((event) => {
+        this.socket.onAny((event, ...args) => {
           this.discoveredEvents.add(event);
+          this.options.onAnyEvent?.(event, args);
         });
       }
 

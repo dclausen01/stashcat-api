@@ -147,4 +147,6 @@ export interface RealtimeManagerOptions {
   reconnect?: boolean;
   /** Debug-Modus: loggt alle empfangenen Events auf console (Standard: false) */
   debug?: boolean;
+  /** Optionaler Catch-all-Handler für alle empfangenen Socket.io-Events (für externe Diagnose) */
+  onAnyEvent?: (event: string, args: unknown[]) => void;
 }
