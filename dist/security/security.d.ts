@@ -45,6 +45,16 @@ export declare class SecurityManager {
     /** Clear the AES key cache (e.g. after logout) */
     clearKeyCache(): void;
     /**
+     * Sign data with the unlocked RSA private key (RSA-SHA256, returns Buffer).
+     * Used to sign key payloads for /security/set_missing_key.
+     */
+    signData(data: Buffer): Buffer;
+    /**
+     * Encrypt data with an RSA public key (OAEP+SHA256 padding).
+     * Used to encrypt AES conversation keys for another user's public key.
+     */
+    static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer;
+    /**
      * Set file access key (grants access to an encrypted file for a target user/channel)
      */
     setFileAccessKey(fileId: string, target: string, targetId: string, key: string, iv: string): Promise<void>;

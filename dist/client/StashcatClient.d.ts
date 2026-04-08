@@ -236,6 +236,16 @@ export declare class StashcatClient {
     storePollUserAnswers(questionId: string, answerIds: string[]): Promise<unknown>;
     getPrivateKey(): Promise<PrivateKeyResponse>;
     /**
+     * Sign data with the unlocked RSA private key (RSA-SHA256).
+     * Requires E2E to be unlocked first.
+     */
+    signData(data: Buffer): Buffer;
+    /**
+     * Encrypt data with a PEM-encoded RSA public key (OAEP+SHA1 padding).
+     * Used to encrypt AES keys for another user.
+     */
+    static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer;
+    /**
      * Erstellt einen RealtimeManager für Push-Events via Socket.io.
      * Holt automatisch die `socket_id` (hidden_id) des Users für den Auth-Handshake.
      * Die Verbindung wird NICHT automatisch aufgebaut — rufe `rt.connect()` auf.

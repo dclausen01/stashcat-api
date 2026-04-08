@@ -605,6 +605,21 @@ class StashcatClient {
         this.requireAuth();
         return this.security.getPrivateKey();
     }
+    /**
+     * Sign data with the unlocked RSA private key (RSA-SHA256).
+     * Requires E2E to be unlocked first.
+     */
+    signData(data) {
+        this.requireAuth();
+        return this.security.signData(data);
+    }
+    /**
+     * Encrypt data with a PEM-encoded RSA public key (OAEP+SHA1 padding).
+     * Used to encrypt AES keys for another user.
+     */
+    static encryptWithPublicKey(publicKeyPem, data) {
+        return security_1.SecurityManager.encryptWithPublicKey(publicKeyPem, data);
+    }
     // ─── Realtime ─────────────────────────────────────────────────────────────
     /**
      * Erstellt einen RealtimeManager für Push-Events via Socket.io.

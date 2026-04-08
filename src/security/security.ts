@@ -118,6 +118,29 @@ export class SecurityManager {
   }
 
   /**
+   * Sign data with the unlocked RSA private key (RSA-SHA256, returns Buffer).
+   * Used to sign key payloads for /security/set_missing_key.
+   */
+  signData(data: Buffer): Buffer {
+    if (!this.rsaPrivateKey) {
+      throw new Error('E2E not unlocked — call unlockE2E() first');
+    }
+    return crypto.sign('sha256', data, this.rsaPrivateKey);
+  }
+
+  /**
+   * Encrypt data with an RSA public key (OAEP+SHA256 padding).
+   * Used to encrypt AES conversation keys for another user's public key.
+   */
+  static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer {
+    const publicKey = crypto.createPublicKey(publicKeyPem);
+    return crypto.publicEncrypt(
+      { key: publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha1' },
+      data
+    );
+  }
+
+  /**
    * Set file access key (grants access to an encrypted file for a target user/channel)
    */
   async setFileAccessKey(

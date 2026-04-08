@@ -795,6 +795,23 @@ export class StashcatClient {
     return this.security.getPrivateKey();
   }
 
+  /**
+   * Sign data with the unlocked RSA private key (RSA-SHA256).
+   * Requires E2E to be unlocked first.
+   */
+  signData(data: Buffer): Buffer {
+    this.requireAuth();
+    return this.security.signData(data);
+  }
+
+  /**
+   * Encrypt data with a PEM-encoded RSA public key (OAEP+SHA1 padding).
+   * Used to encrypt AES keys for another user.
+   */
+  static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer {
+    return SecurityManager.encryptWithPublicKey(publicKeyPem, data);
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   /**
