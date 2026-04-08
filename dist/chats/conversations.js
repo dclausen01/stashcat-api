@@ -15,7 +15,10 @@ class ConversationManager {
         });
         try {
             const response = await this.api.post('/message/conversations', request);
-            return response.conversations || [];
+            return (response.conversations || []).map((c) => ({
+                ...c,
+                unread_count: c.unread_count ?? c.unread_messages ?? 0,
+            }));
         }
         catch (error) {
             throw new Error(`Failed to get conversations: ${error instanceof Error ? error.message : error}`);
@@ -26,7 +29,10 @@ class ConversationManager {
         const request = this.api.createAuthenticatedRequestData({ conversation_id: conversationId });
         try {
             const response = await this.api.post('/message/conversation', request);
-            return response.conversation;
+            const conv = response.conversation;
+            if (conv)
+                conv.unread_count = conv.unread_count ?? conv.unread_messages ?? 0;
+            return conv;
         }
         catch (error) {
             throw new Error(`Failed to get conversation: ${error instanceof Error ? error.message : error}`);

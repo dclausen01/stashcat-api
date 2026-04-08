@@ -10,7 +10,10 @@ class ChannelManager {
         const request = this.api.createAuthenticatedRequestData({ company: companyId });
         try {
             const response = await this.api.post('/channels/subscripted', request);
-            return response.channels || [];
+            return (response.channels || []).map((ch) => ({
+                ...ch,
+                unread_count: ch.unread_count ?? ch.unread_messages ?? 0,
+            }));
         }
         catch (error) {
             throw new Error(`Failed to get channels: ${error instanceof Error ? error.message : error}`);
@@ -26,7 +29,10 @@ class ChannelManager {
         });
         try {
             const response = await this.api.post('/channels/visible', request);
-            return response.channels || [];
+            return (response.channels || []).map((ch) => ({
+                ...ch,
+                unread_count: ch.unread_count ?? ch.unread_messages ?? 0,
+            }));
         }
         catch (error) {
             throw new Error(`Failed to get visible channels: ${error instanceof Error ? error.message : error}`);
@@ -40,7 +46,10 @@ class ChannelManager {
         });
         try {
             const response = await this.api.post('/channels/info', request);
-            return response.channels ?? response.channel;
+            const ch = response.channels ?? response.channel;
+            if (ch)
+                ch.unread_count = ch.unread_count ?? ch.unread_messages ?? 0;
+            return ch;
         }
         catch (error) {
             throw new Error(`Failed to get channel info: ${error instanceof Error ? error.message : error}`);
