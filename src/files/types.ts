@@ -127,7 +127,16 @@ export interface FileUploadOptions {
   filename?: string;
 }
 
+export interface FileQuotaEntry {
+  kb: number;
+  value: string;
+  unit: string;
+  percent: string;
+}
+
 export interface FileQuota {
-  used: number | string;
-  total: number | string;
+  absolute: FileQuotaEntry;
+  used: FileQuotaEntry;
+  free: FileQuotaEntry;
+  personal_used?: FileQuotaEntry;
 }
