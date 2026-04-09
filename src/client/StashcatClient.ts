@@ -505,6 +505,12 @@ export class StashcatClient {
     return this.files.listPersonalFiles(me.id, options);
   }
 
+  /** Get storage quota for a channel, conversation, or personal storage */
+  async getQuota(type: string, typeId: string): Promise<FileQuota> {
+    this.requireAuth();
+    return this.files.getQuota(type, typeId);
+  }
+
   async deleteFiles(fileIds: string[]): Promise<void> {
     this.requireAuth();
     return this.files.deleteFiles(fileIds);

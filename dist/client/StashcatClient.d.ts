@@ -179,6 +179,8 @@ export declare class StashcatClient {
     listFolder(options?: FolderListOptions): Promise<FolderContent>;
     /** Listet die persönliche Ablage des eingeloggten Nutzers ("Meine Dateien") */
     listPersonalFiles(options?: Omit<FolderListOptions, 'type' | 'type_id'>): Promise<FolderContent>;
+    /** Get storage quota for a channel, conversation, or personal storage */
+    getQuota(type: string, typeId: string): Promise<FileQuota>;
     deleteFiles(fileIds: string[]): Promise<void>;
     deleteFolder(folderId: number): Promise<void>;
     renameFile(fileId: string, name: string): Promise<void>;

@@ -376,6 +376,11 @@ class StashcatClient {
         const me = await this.users.getMe();
         return this.files.listPersonalFiles(me.id, options);
     }
+    /** Get storage quota for a channel, conversation, or personal storage */
+    async getQuota(type, typeId) {
+        this.requireAuth();
+        return this.files.getQuota(type, typeId);
+    }
     async deleteFiles(fileIds) {
         this.requireAuth();
         return this.files.deleteFiles(fileIds);
