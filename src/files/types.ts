@@ -128,6 +128,6 @@ export interface FileUploadOptions {
 }
 
 export interface FileQuota {
-  used: number;
-  total: number;
+  used: number | string;
+  total: number | string;
 }
