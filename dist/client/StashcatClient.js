@@ -625,6 +625,97 @@ class StashcatClient {
     static encryptWithPublicKey(publicKeyPem, data) {
         return security_1.SecurityManager.encryptWithPublicKey(publicKeyPem, data);
     }
+    // ─── Device-to-Device Key Transfer ───────────────────────────────────────
+    /**
+     * Login without E2E unlock. The client remains authenticated but E2E is not unlocked.
+     * Call `completeKeyTransferWithCode()` or `unlockE2EWithPrivateKey()` afterwards to enable E2E.
+     *
+     * @param config Login credentials (email, password). securityPassword is NOT required.
+     * @returns Auth state
+     */
+    async loginWithoutE2E(config) {
+        const authConfig = {
+            email: config.email,
+            password: config.password,
+            appName: config.appName,
+            // securityPassword is intentionally omitted - no auto-unlock
+        };
+        return this.auth.login(authConfig);
+    }
+    /**
+     * Initiate a key transfer to another device.
+     * This triggers the server to generate a 6-digit code and show it on the target device.
+     *
+     * Note: The actual transfer happens via Socket.io or server-side logic.
+     * This method prepares the transfer on the target device side.
+     *
+     * @param targetDeviceId The device ID of the target device that will show the code
+     */
+    async initiateKeyTransferToDevice(targetDeviceId) {
+        this.requireAuth();
+        // Currently this is a placeholder - the actual implementation would trigger
+        // the target device via Socket.io or a dedicated endpoint
+        // The target device needs to call an endpoint to prepare the encrypted KEK
+        throw new Error('initiateKeyTransferToDevice: Not yet fully implemented. Requires Socket.io integration for triggering the target device.');
+    }
+    /**
+     * Complete the key transfer by entering the 6-digit code from the target device.
+     *
+     * Process:
+     * 1. Get signing key from server (already encrypted with code-derived KEK)
+     * 2. Derive KEK from the 6-digit code
+     * 3. Decrypt the encryptedKEK
+     * 4. Use decrypted KEK to decrypt the private key ciphertext
+     * 5. Store the private key in E2E state
+     *
+     * @param code The 6-digit code displayed on the target device
+     * @returns The decrypted private key as JWK (for storage)
+     */
+    async completeKeyTransferWithCode(code) {
+        this.requireAuth();
+        // Step 1: Get the signing key data (encrypted by target device with code-derived KEK)
+        const signingKeyData = await this.security.getSigningKeyForTransfer();
+        // Step 2: Decrypt the signing key with the code
+        const privateKeyJwk = await this.security.decryptSigningKeyWithCode(signingKeyData, code);
+        return privateKeyJwk;
+    }
+    /**
+     * Unlock E2E with a pre-decrypted private key (JWK format).
+     * Use this for server-side session restoration without repeating the code flow.
+     *
+     * @param jwk The RSA private key in JWK format (from exportPrivateKey() or decryptSigningKeyWithCode())
+     */
+    unlockE2EWithPrivateKey(jwk) {
+        this.requireAuth();
+        this.security.setPrivateKeyFromJWK(jwk);
+    }
+    /**
+     * Export the current decrypted private key as JWK.
+     * Useful for persisting the key in an encrypted session token.
+     *
+     * @returns The private key as JWK, or undefined if E2E is not unlocked
+     */
+    exportPrivateKey() {
+        this.requireAuth();
+        return this.security.exportPrivateKeyAsJWK();
+    }
+    /**
+     * Check if a device supports key transfer.
+     * @param device The device to check
+     * @returns true if the device supports key transfer
+     */
+    deviceSupportsKeyTransfer(device) {
+        return device.key_transfer_support === true;
+    }
+    /**
+     * Get devices that support key transfer from the list of active devices.
+     * @returns Filtered list of devices that can be used for key transfer
+     */
+    async getDevicesWithKeyTransferSupport() {
+        this.requireAuth();
+        const devices = await this.account.listActiveDevices();
+        return devices.filter(d => d.key_transfer_support);
+    }
     // ─── Realtime ─────────────────────────────────────────────────────────────
     /**
      * Erstellt einen RealtimeManager für Push-Events via Socket.io.

@@ -771,3 +771,146 @@ Extended with +11 fields from live `/users/me` response:
 - Auto-reconnect on session expiry
 - Multi-user session pool (needed for Nextcloud: one `StashcatClient` per Nextcloud user)
 - Full typing of all Socket.io event payloads (many are still `unknown`)
+
+## Device-to-Device E2E Key Transfer (Reverse-Engineered)
+
+### Protocol Discovery (2026-04-11)
+
+**Goal**: Transfer the RSA private key from an already logged-in device (e.g., mobile) to a new device (e.g., web client) without asking the user for their security password.
+
+### Reverse-Engineered Flow
+
+Based on DevTools analysis of the schul.cloud/Stashcat web client:
+
+**Phase 1: Login on new device**
+1. Client logs in with email/password (`/auth/login`)
+2. Client does NOT auto-unlock E2E (`loginWithoutE2E`)
+3. Client is now authenticated but E2E locked
+
+**Phase 2: Target device initiates transfer**
+1. User clicks "Transfer key to new device" on target device (mobile/app)
+2. Target device generates random 6-digit code
+3. Target device derives KEK (Key Encryption Key) from the code
+4. Target device wraps local KEK with code-derived KEK
+5. Target device sends wrapped KEK to server (likely via Socket.io `send_encrypted_data_to_device`)
+
+**Phase 3: Completion on new device**
+1. New device calls `POST /security/get_private_key?type=signing&format=jwk`
+2. Server returns encrypted key structure:
+   ```json
+   {
+     "user_id": "...",
+     "type": "signing",
+     "format": "jwk",
+     "private_key": "{\"ciphertext\": \"...\", \"iv\": \"...\", \"encryptedKEK\": \"...\", \"encryption_func\": \"aes-256-cbc\"}",
+     "public_key": "{\"kty\": \"RSA\", ...}",
+     "public_key_signature": null,
+     "time": "...",
+     "deleted": null,
+     "version": 3
+   }
+   ```
+3. User enters 6-digit code from target device
+4. Client derives KEK from code (SHA-256 hash)
+5. Client decrypts `encryptedKEK` with code-derived KEK → actual AES KEK
+6. Client decrypts `ciphertext` with AES KEK → JWK private key
+7. Client stores RSA key → E2E unlocked
+
+### API Endpoints Discovered
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/security/get_private_key` | POST | Get encrypted private key with `type=signing&format=jwk` |
+| `/security/get_master_encryption_key` | POST | Get master key for transfer verification |
+| `/security/get_verified_keys` | POST | Get key fingerprints |
+
+**Key observation**: The 6-digit code is **never sent to the server**. It's used locally to derive the KEK for decrypting the wrapped key. This is a zero-knowledge design.
+
+### Implementation
+
+**New methods in `StashcatClient`:**
+- `loginWithoutE2E({email, password})` — Login without E2E unlock
+- `completeKeyTransferWithCode(code: string)` — Complete transfer with 6-digit code
+- `unlockE2EWithPrivateKey(jwk)` — Unlock E2E with exported JWK
+- `exportPrivateKey()` — Export decrypted JWK for persistence
+- `getDevicesWithKeyTransferSupport()` — List devices supporting transfer
+- `deviceSupportsKeyTransfer(device)` — Check if device supports transfer
+
+**SecurityManager extensions:**
+- `getSigningKeyForTransfer()` — Get encrypted signing key from server
+- `decryptSigningKeyWithCode(data, code)` — Decrypt with 6-digit code
+- `setPrivateKeyFromJWK(jwk)` — Set RSA key from JWK
+- `exportPrivateKeyAsJWK()` — Export current key as JWK
+- `getMasterEncryptionKey()` — Get master key
+- `getVerifiedKeys()` — Get verified fingerprints
+
+### Usage Example
+
+```typescript
+// 1. Login without E2E
+const client = new StashcatClient();
+await client.loginWithoutE2E({ email, password });
+
+// 2. Complete transfer with code from mobile device
+await client.completeKeyTransferWithCode('123456');
+
+// 3. Export key for session persistence
+const jwk = client.exportPrivateKey();
+
+// 4. Later: restore with JWK (no password needed)
+const newClient = StashcatClient.fromSession(session);
+newClient.unlockE2EWithPrivateKey(jwk);
+```
+
+### Known Limitations
+
+- `initiateKeyTransferToDevice()` is currently a placeholder — actual triggering happens via Socket.io from the target device
+- The exact KDF used to derive KEK from 6-digit code is implemented as SHA-256 (may need adjustment based on actual app behavior)
+- Target device side (generating and pushing the code) not yet implemented
+
+### Roundtrip Test
+
+See `test/security/key-transfer.test.ts` for the full test suite.
+
+**Test flow:**
+1. `unlockE2E(password)` → get decrypted key
+2. `exportPrivateKey()` → get JWK
+3. `StashcatClient.fromSession()` → new client
+4. `unlockE2EWithPrivateKey(jwk)` → unlock without password
+5. `getConversationAesKey()` → verify identical results
+
+## Updated Architecture
+
+### Encryption Types (`src/encryption/types.ts`)
+
+New interfaces for key transfer:
+- `SigningKeyData` — Response from `get_private_key?type=signing`
+- `EncryptedSigningKey` — Parsed private_key JSON with ciphertext/iv/encryptedKEK
+- `MasterEncryptionKeyResponse` — Master key response
+- `VerifiedKeysResponse` — Key fingerprints
+- `RsaPrivateKeyJwk` — JWK structure for RSA private key
+- `KeyTransferOptions` — Options for initiating transfer
+- `KeyTransferResult` — Result of completed transfer
+
+### Account Types (`src/account/types.ts`)
+
+Extended `ActiveDevice` with key transfer fields:
+- `key_transfer_support?: boolean` — Device supports key transfer
+- `encryption?: boolean` — Encryption enabled
+- `is_fully_authed?: boolean` — Device fully authenticated
+- `last_login?: string` — Last login timestamp
+- `last_request?: string` — Last request timestamp
+- `name?: string` — Device name
+
+### Index Exports
+
+All new types exported from `src/index.ts`:
+- `SigningKeyData`
+- `EncryptedSigningKey`
+- `MasterEncryptionKeyResponse`
+- `VerifiedKeysResponse`
+- `RsaPrivateKeyJwk`
+- `KeyTransferOptions`
+- `KeyTransferResult`
+- `SigningKeyResponse` (Security module)
+

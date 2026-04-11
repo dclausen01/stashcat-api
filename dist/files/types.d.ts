@@ -122,8 +122,16 @@ export interface FileUploadOptions {
      *  bleiben soll. */
     filename?: string;
 }
+export interface FileQuotaEntry {
+    kb: number;
+    value: string;
+    unit: string;
+    percent: string;
+}
 export interface FileQuota {
-    used: number;
-    total: number;
+    absolute: FileQuotaEntry;
+    used: FileQuotaEntry;
+    free: FileQuotaEntry;
+    personal_used?: FileQuotaEntry;
 }
 //# sourceMappingURL=types.d.ts.map

@@ -18,8 +18,9 @@ export { CalendarManager } from './calendar/calendar';
 export { CalendarEvent, EventType, EventInviteStatus, EventRepeat, EventInvite, EventUser, CreateEventOptions, EditEventOptions, ListEventsOptions, AvailableCalendar } from './calendar/types';
 export { PollManager } from './poll/poll';
 export { Poll, PollListItem, PollQuestion, PollAnswer, PollUser, PollPrivacyType, PollConstraint, PollInviteTarget, CreatePollOptions, EditPollOptions, CreateQuestionOptions, EditQuestionOptions, CreateAnswerOptions, EditAnswerOptions, } from './poll/types';
-export { SecurityManager, PrivateKeyResponse, EncryptionKeyData } from './security/security';
+export { SecurityManager, PrivateKeyResponse, EncryptionKeyData, SigningKeyResponse } from './security/security';
 export { CryptoManager } from './encryption/crypto';
+export { SigningKeyData, EncryptedSigningKey, MasterEncryptionKeyResponse, VerifiedKeysResponse, RsaPrivateKeyJwk, KeyTransferOptions, KeyTransferResult, } from './encryption/types';
 export { RealtimeManager } from './realtime/realtime';
 export { RealtimeEvents, MessageSyncPayload, RealtimeManagerOptions } from './realtime/types';
 //# sourceMappingURL=index.d.ts.map

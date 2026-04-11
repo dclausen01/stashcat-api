@@ -36,7 +36,7 @@ Object.defineProperty(exports, "PollManager", { enumerable: true, get: function 
 // Security
 var security_1 = require("./security/security");
 Object.defineProperty(exports, "SecurityManager", { enumerable: true, get: function () { return security_1.SecurityManager; } });
-// Encryption (EncryptionKey removed — no longer used internally)
+// Encryption
 var crypto_1 = require("./encryption/crypto");
 Object.defineProperty(exports, "CryptoManager", { enumerable: true, get: function () { return crypto_1.CryptoManager; } });
 // Realtime

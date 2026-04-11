@@ -344,6 +344,123 @@ npm test           # Run Jest tests
 npm run clean      # Remove dist/
 ```
 
+## Device-to-Device E2E Key Transfer
+
+Transfer your encrypted private key from an already logged-in device (e.g., mobile app) to a new device (e.g., web client) without entering your security password. The target device generates a 6-digit code that the new device uses to decrypt the key.
+
+### Protocol Overview
+
+Based on reverse-engineering the Stashcat web client:
+
+1. **Target device** (already logged in): Initiates transfer via Socket.io/App, generates 6-digit code, wraps KEK with code
+2. **New device**: Logs in without E2E (`loginWithoutE2E`), fetches encrypted key with `type=signing` format
+3. **User**: Enters 6-digit code shown on target device
+4. **New device**: Decrypts KEK with code, decrypts private key, unlocks E2E
+
+### API Endpoints Discovered
+
+- `POST /security/get_private_key?type=signing&format=jwk` — Returns encrypted JWK with `ciphertext`, `iv`, `encryptedKEK`, `encryption_func: "aes-256-cbc"`
+- `POST /security/get_master_encryption_key` — Master key for transfer verification
+- `POST /security/get_verified_keys` — Key fingerprints
+
+### Usage
+
+```typescript
+// 1. Login WITHOUT E2E (like a new device would)
+const client = new StashcatClient({ baseUrl: 'https://api.stashcat.com/' });
+await client.loginWithoutE2E({
+  email: 'user@example.com',
+  password: 'password',
+});
+
+// 2. List devices that support key transfer
+const devices = await client.getDevicesWithKeyTransferSupport();
+console.log('Available devices:', devices.map(d => `${d.app_name} (${d.device_id})`));
+
+// 3. On the target device, the user clicks "Transfer key to new device"
+//    This shows a 6-digit code on the target device
+//    (The initiateKeyTransferToDevice method is a placeholder - actual
+//     triggering happens via Socket.io push from the target device)
+
+// 4. Complete the transfer by entering the 6-digit code
+const privateKeyJwk = await client.completeKeyTransferWithCode('123456');
+console.log('Key transferred! E2E unlocked:', client.isE2EUnlocked());
+
+// 5. Optionally export the key for session persistence
+const savedJwk = client.exportPrivateKey(); // Save to encrypted storage
+```
+
+### Session Persistence with Exported Key
+
+```typescript
+// After completing key transfer (or any E2E unlock)
+const session = client.serialize();
+const jwk = client.exportPrivateKey(); // RSA private key as JWK
+
+// Store both in encrypted form (e.g., Nextcloud database)
+await db.set('stashcat_session', JSON.stringify(session));
+await db.set('stashcat_e2e_key', JSON.stringify(jwk)); // Encrypt this!
+
+// Later: Restore without re-login or key transfer
+const session = JSON.parse(await db.get('stashcat_session'));
+const jwk = JSON.parse(await db.get('stashcat_e2e_key'));
+
+const client = StashcatClient.fromSession(session, { baseUrl });
+client.unlockE2EWithPrivateKey(jwk); // Direct unlock, no password needed
+// Now E2E is fully functional
+```
+
+### Roundtrip Test
+
+```typescript
+// Test: Password unlock → export → JWK unlock → same E2E operations
+await client.login({ email, password, securityPassword: password });
+expect(client.isE2EUnlocked()).toBe(true);
+
+const jwk = client.exportPrivateKey();
+const session = client.serialize();
+
+// New client from session
+const client2 = StashcatClient.fromSession(session);
+expect(client2.isE2EUnlocked()).toBe(false);
+
+client2.unlockE2EWithPrivateKey(jwk);
+expect(client2.isE2EUnlocked()).toBe(true);
+
+// Both clients now have identical E2E capability
+const aesKey1 = await client.getConversationAesKey('conv123');
+const aesKey2 = await client2.getConversationAesKey('conv123');
+expect(aesKey1.equals(aesKey2)).toBe(true);
+```
+
+### Available Methods
+
+```typescript
+// Login without E2E unlock
+await client.loginWithoutE2E({ email, password });
+
+// Complete key transfer with 6-digit code from target device
+const jwk = await client.completeKeyTransferWithCode('123456');
+
+// Unlock E2E with exported JWK (for session restoration)
+client.unlockE2EWithPrivateKey(jwk);
+
+// Export current decrypted private key as JWK
+const jwk = client.exportPrivateKey();
+
+// Check if device supports key transfer
+const supportsTransfer = client.deviceSupportsKeyTransfer(device);
+
+// Get devices supporting key transfer
+const devices = await client.getDevicesWithKeyTransferSupport();
+
+// Get master encryption key (for verification)
+const masterKey = await client['security'].getMasterEncryptionKey();
+
+// Get verified key fingerprints
+const verifiedKeys = await client['security'].getVerifiedKeys();
+```
+
 ## License
 
 MIT

@@ -42,10 +42,19 @@ export {
 } from './poll/types';
 
 // Security
-export { SecurityManager, PrivateKeyResponse, EncryptionKeyData } from './security/security';
+export { SecurityManager, PrivateKeyResponse, EncryptionKeyData, SigningKeyResponse } from './security/security';
 
-// Encryption (EncryptionKey removed — no longer used internally)
+// Encryption
 export { CryptoManager } from './encryption/crypto';
+export {
+  SigningKeyData,
+  EncryptedSigningKey,
+  MasterEncryptionKeyResponse,
+  VerifiedKeysResponse,
+  RsaPrivateKeyJwk,
+  KeyTransferOptions,
+  KeyTransferResult,
+} from './encryption/types';
 
 // Realtime
 export { RealtimeManager } from './realtime/realtime';

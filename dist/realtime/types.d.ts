@@ -44,7 +44,9 @@ export interface RealtimeEvents {
     object_change: (data: unknown) => void;
     file_change: (data: unknown) => void;
     message_read: (data: unknown) => void;
-    notification: (data: unknown) => void;
+    notification: (data: {
+        message: MessageSyncPayload;
+    }) => void;
     new_invite: (data: unknown) => void;
     online_status_change: (data: unknown) => void;
     call_created: (data: unknown) => void;

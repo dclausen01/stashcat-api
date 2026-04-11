@@ -1,5 +1,6 @@
 import { StashcatAPI, StashcatConfig } from '../api/request';
-import { AuthConfig } from '../auth/types';
+import { AuthConfig, AuthState } from '../auth/types';
+import { RsaPrivateKeyJwk } from '../encryption/types';
 import { CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from '../chats/channels';
 import { SendMessageOptions } from '../chats/messages';
 import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
@@ -247,6 +248,67 @@ export declare class StashcatClient {
      * Used to encrypt AES keys for another user.
      */
     static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer;
+    /**
+     * Login without E2E unlock. The client remains authenticated but E2E is not unlocked.
+     * Call `completeKeyTransferWithCode()` or `unlockE2EWithPrivateKey()` afterwards to enable E2E.
+     *
+     * @param config Login credentials (email, password). securityPassword is NOT required.
+     * @returns Auth state
+     */
+    loginWithoutE2E(config: {
+        email: string;
+        password: string;
+        appName?: string;
+    }): Promise<AuthState>;
+    /**
+     * Initiate a key transfer to another device.
+     * This triggers the server to generate a 6-digit code and show it on the target device.
+     *
+     * Note: The actual transfer happens via Socket.io or server-side logic.
+     * This method prepares the transfer on the target device side.
+     *
+     * @param targetDeviceId The device ID of the target device that will show the code
+     */
+    initiateKeyTransferToDevice(targetDeviceId: string): Promise<void>;
+    /**
+     * Complete the key transfer by entering the 6-digit code from the target device.
+     *
+     * Process:
+     * 1. Get signing key from server (already encrypted with code-derived KEK)
+     * 2. Derive KEK from the 6-digit code
+     * 3. Decrypt the encryptedKEK
+     * 4. Use decrypted KEK to decrypt the private key ciphertext
+     * 5. Store the private key in E2E state
+     *
+     * @param code The 6-digit code displayed on the target device
+     * @returns The decrypted private key as JWK (for storage)
+     */
+    completeKeyTransferWithCode(code: string): Promise<RsaPrivateKeyJwk>;
+    /**
+     * Unlock E2E with a pre-decrypted private key (JWK format).
+     * Use this for server-side session restoration without repeating the code flow.
+     *
+     * @param jwk The RSA private key in JWK format (from exportPrivateKey() or decryptSigningKeyWithCode())
+     */
+    unlockE2EWithPrivateKey(jwk: RsaPrivateKeyJwk): void;
+    /**
+     * Export the current decrypted private key as JWK.
+     * Useful for persisting the key in an encrypted session token.
+     *
+     * @returns The private key as JWK, or undefined if E2E is not unlocked
+     */
+    exportPrivateKey(): RsaPrivateKeyJwk | undefined;
+    /**
+     * Check if a device supports key transfer.
+     * @param device The device to check
+     * @returns true if the device supports key transfer
+     */
+    deviceSupportsKeyTransfer(device: ActiveDevice): boolean;
+    /**
+     * Get devices that support key transfer from the list of active devices.
+     * @returns Filtered list of devices that can be used for key transfer
+     */
+    getDevicesWithKeyTransferSupport(): Promise<ActiveDevice[]>;
     /**
      * Erstellt einen RealtimeManager für Push-Events via Socket.io.
      * Holt automatisch die `socket_id` (hidden_id) des Users für den Auth-Handshake.
