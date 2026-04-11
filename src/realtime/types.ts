@@ -53,7 +53,7 @@ export interface RealtimeEvents {
   message_read: (data: unknown) => void;
 
   // ─── Benachrichtigungen ───────────────────────────────────────────────────
-  notification: (data: unknown) => void;
+  notification: (data: { message: MessageSyncPayload }) => void;
   new_invite: (data: unknown) => void;
 
   // ─── Online-Status ────────────────────────────────────────────────────────

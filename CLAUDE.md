@@ -571,7 +571,7 @@ These events have been confirmed via live testing against schul.cloud (2026-03-2
 | `channel_created`        | `unknown`                                                                | New channel                            |
 | `channel_deleted`        | `unknown`                                                                | Channel removed                        |
 | `message_read`           | `unknown`                                                                | Message marked as read                 |
-| `notification`           | `unknown`                                                                | Push notification                      |
+| `notification`           | `{ message: MessageSyncPayload }`                                        | Push notification — live-verified 2026-04-11 |
 
 Additional events discovered from the Angular bundle (not yet live-verified):
 `channel_membership_gained`, `channel_membership_lost`, `object_change`, `file_change`,
