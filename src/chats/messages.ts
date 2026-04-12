@@ -86,7 +86,7 @@ export class MessageManager {
   /** Send a message to a channel or conversation */
   async sendMessage(options: SendMessageOptions): Promise<Message> {
     const targetIdKey = options.target_type === 'conversation' ? 'conversation_id' : 'channel_id';
-    const request = this.api.createAuthenticatedRequestData({
+    const requestData: Record<string, unknown> = {
       target: options.target_type,
       [targetIdKey]: options.target,
       text: options.text,
@@ -100,7 +100,10 @@ export class MessageManager {
       verification: options.verification,
       is_forwarded: options.is_forwarded,
       reply_to_id: options.reply_to_id ? Number(options.reply_to_id) : undefined,
-    });
+      // DEBUG: Also send as reply_to (some APIs use this field name)
+      reply_to: options.reply_to_id ? Number(options.reply_to_id) : undefined,
+    };
+    const request = this.api.createAuthenticatedRequestData(requestData);
 
     try {
       const response = await this.api.post<{ message: Message }>('/message/send', request);
