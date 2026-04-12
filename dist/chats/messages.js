@@ -60,7 +60,7 @@ class MessageManager {
             longitude: options.longitude,
             verification: options.verification,
             is_forwarded: options.is_forwarded,
-            reply_to_id: options.reply_to_id,
+            reply_to_id: options.reply_to_id ? Number(options.reply_to_id) : undefined,
         });
         try {
             const response = await this.api.post('/message/send', request);
