@@ -1,6 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { APIResponse } from './response';
+
+function apiLog(...args: unknown[]) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+  const line = `[${new Date().toISOString()}] [stashcat-api] ${msg}\n`;
+  try {
+    const logPath = path.join(process.cwd(), 'stashcat-api-debug.log');
+    fs.appendFileSync(logPath, line);
+  } catch {}
+}
 
 export interface StashcatConfig {
   baseUrl?: string;
@@ -44,6 +55,11 @@ export class StashcatAPI {
 
   async post<T>(path: string, data: unknown): Promise<T> {
     try {
+      // DEBUG: Log raw request body for message send
+      if (path === '/message/send') {
+        apiLog('POST /message/send DATA:', JSON.stringify(data, null, 2));
+      }
+
       // Convert object to URLSearchParams for form-urlencoded
       let formData: string | URLSearchParams;
       if (typeof data === 'object' && data !== null) {
@@ -56,6 +72,9 @@ export class StashcatAPI {
           }
         }
         formData = params;
+        if (path === '/message/send') {
+          apiLog('POST /message/send ENCODED:', formData.toString());
+        }
       } else {
         formData = String(data);
       }
