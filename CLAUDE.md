@@ -668,7 +668,8 @@ The following behaviors have been confirmed via live testing against schul.cloud
 Fields confirmed via live `message_sync` events and REST API:
 
 - `files?: MessageFile[]` — attached files
-- `reply_to_id?: string` — ID of the message being replied to
+- `reply_to?: number | null` — **Important:** When sending a reply via `sendMessage()`, the stashcat backend API expects the field **`reply_to`** (not `reply_to_id`) containing the message ID as a Number. The response contains `reply_to` as an object `{ message_id, message_hash, message_verification }`.
+- `reply_to_id?: string` — TypeScript interface field name (internal), but the API payload uses `reply_to`
 - `likes?: number` — number of likes
 - `liked?: boolean` — whether the current user liked this message
 - `flagged?: boolean` — whether the current user flagged this message
