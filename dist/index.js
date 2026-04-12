@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RealtimeManager = exports.CryptoManager = exports.SecurityManager = exports.PollManager = exports.CalendarManager = exports.BroadcastManager = exports.FileManager = exports.AccountManager = exports.UserManager = exports.MessageManager = exports.ConversationManager = exports.ChannelManager = exports.AuthManager = exports.StashcatAPI = exports.StashcatClient = void 0;
+exports.RealtimeManager = exports.CryptoManager = exports.SecurityManager = exports.PollManager = exports.CalendarManager = exports.BroadcastManager = exports.FileManager = exports.STATUS_DND = exports.STATUS_AVAILABLE = exports.AccountManager = exports.UserManager = exports.MessageManager = exports.ConversationManager = exports.ChannelManager = exports.AuthManager = exports.StashcatAPI = exports.StashcatClient = void 0;
 var StashcatClient_1 = require("./client/StashcatClient");
 Object.defineProperty(exports, "StashcatClient", { enumerable: true, get: function () { return StashcatClient_1.StashcatClient; } });
 var request_1 = require("./api/request");
@@ -21,6 +21,9 @@ Object.defineProperty(exports, "UserManager", { enumerable: true, get: function 
 // Account
 var account_1 = require("./account/account");
 Object.defineProperty(exports, "AccountManager", { enumerable: true, get: function () { return account_1.AccountManager; } });
+var account_2 = require("./account/account");
+Object.defineProperty(exports, "STATUS_AVAILABLE", { enumerable: true, get: function () { return account_2.STATUS_AVAILABLE; } });
+Object.defineProperty(exports, "STATUS_DND", { enumerable: true, get: function () { return account_2.STATUS_DND; } });
 // Files
 var files_1 = require("./files/files");
 Object.defineProperty(exports, "FileManager", { enumerable: true, get: function () { return files_1.FileManager; } });

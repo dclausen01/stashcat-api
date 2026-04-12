@@ -1,5 +1,9 @@
 import { StashcatAPI } from '../api/request';
 import { AccountSettings, ActiveDevice, Notification } from './types';
+/** Status values that the stashcat backend recognizes for availability */
+export declare const STATUS_AVAILABLE = "verf\u00FCgbar";
+export declare const STATUS_DND = "Bitte nicht st\u00F6ren!";
+export type OnlineStatus = 'available' | 'do_not_disturb';
 export declare class AccountManager {
     private api;
     constructor(api: StashcatAPI);
@@ -7,6 +11,13 @@ export declare class AccountManager {
      * Change user status message
      */
     changeStatus(status: string): Promise<void>;
+    /**
+     * Set online availability status.
+     * The stashcat backend recognizes the German status text to determine notification behavior.
+     * - 'available' → sends "verfügbar" (green dot, notifications enabled)
+     * - 'do_not_disturb' → sends "Bitte nicht stören!" (red dot, notifications suppressed)
+     */
+    setOnlineStatus(status: OnlineStatus): Promise<void>;
     /**
      * Change account password
      */

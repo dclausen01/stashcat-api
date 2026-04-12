@@ -18,6 +18,7 @@ export { User, Company, CompanyMember, ManagedUser, CompanyGroup } from './users
 // Account
 export { AccountManager } from './account/account';
 export { AccountSettings, ActiveDevice, Notification } from './account/types';
+export { STATUS_AVAILABLE, STATUS_DND, OnlineStatus } from './account/account';
 
 // Files
 export { FileManager } from './files/files';

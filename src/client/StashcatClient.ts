@@ -8,7 +8,7 @@ import { MessageManager, SendMessageOptions } from '../chats/messages';
 import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { UserManager } from '../users/users';
 import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
-import { AccountManager } from '../account/account';
+import { AccountManager, OnlineStatus } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileManager } from '../files/files';
 import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota, FolderEntry } from '../files/types';
@@ -547,6 +547,11 @@ export class StashcatClient {
   async changeStatus(status: string): Promise<void> {
     this.requireAuth();
     return this.account.changeStatus(status);
+  }
+
+  async setOnlineStatus(status: OnlineStatus): Promise<void> {
+    this.requireAuth();
+    return this.account.setOnlineStatus(status);
   }
 
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {

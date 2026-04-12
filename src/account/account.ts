@@ -1,6 +1,12 @@
 import { StashcatAPI } from '../api/request';
 import { AccountSettings, ActiveDevice, Notification } from './types';
 
+/** Status values that the stashcat backend recognizes for availability */
+export const STATUS_AVAILABLE = 'verfügbar';
+export const STATUS_DND = 'Bitte nicht stören!';
+
+export type OnlineStatus = 'available' | 'do_not_disturb';
+
 interface AccountSettingsResponse {
   settings: AccountSettings;
 }
@@ -31,6 +37,17 @@ export class AccountManager {
     } catch (error) {
       throw new Error(`Failed to change status: ${error instanceof Error ? error.message : error}`);
     }
+  }
+
+  /**
+   * Set online availability status.
+   * The stashcat backend recognizes the German status text to determine notification behavior.
+   * - 'available' → sends "verfügbar" (green dot, notifications enabled)
+   * - 'do_not_disturb' → sends "Bitte nicht stören!" (red dot, notifications suppressed)
+   */
+  async setOnlineStatus(status: OnlineStatus): Promise<void> {
+    const statusText = status === 'available' ? STATUS_AVAILABLE : STATUS_DND;
+    return this.changeStatus(statusText);
   }
 
   /**

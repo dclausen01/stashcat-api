@@ -5,6 +5,7 @@ import { CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from 
 import { SendMessageOptions } from '../chats/messages';
 import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
+import { OnlineStatus } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
 import { FileInfo, FolderContent, FolderListOptions, FileUploadOptions, FileQuota, FolderEntry } from '../files/types';
 import { PrivateKeyResponse } from '../security/security';
@@ -189,6 +190,7 @@ export declare class StashcatClient {
     createFolder(name: string, parentId: string, type: string, typeId: string): Promise<FolderEntry>;
     getStorageQuota(type: string, typeId: string): Promise<FileQuota>;
     changeStatus(status: string): Promise<void>;
+    setOnlineStatus(status: OnlineStatus): Promise<void>;
     changePassword(oldPassword: string, newPassword: string): Promise<void>;
     getAccountSettings(): Promise<AccountSettings>;
     listActiveDevices(): Promise<ActiveDevice[]>;

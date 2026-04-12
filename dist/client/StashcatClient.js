@@ -410,6 +410,10 @@ class StashcatClient {
         this.requireAuth();
         return this.account.changeStatus(status);
     }
+    async setOnlineStatus(status) {
+        this.requireAuth();
+        return this.account.setOnlineStatus(status);
+    }
     async changePassword(oldPassword, newPassword) {
         this.requireAuth();
         return this.account.changePassword(oldPassword, newPassword);
