@@ -224,6 +224,7 @@ Privacy types: `open`, `hidden`, `anonymous`. Constraint filter: `createdByAndNo
 | Endpoint                       | Method                   |
 | ------------------------------ | ------------------------ |
 | `/account/change_status`       | `changeStatus()`         |
+| `/account/setOnlineStatus()`   | `setOnlineStatus()`      |
 | `/account/change_password`     | `changePassword()`       |
 | `/account/settings`            | `getAccountSettings()`   |
 | `/account/list_active_devices` | `listActiveDevices()`    |
@@ -231,6 +232,13 @@ Privacy types: `open`, `hidden`, `anonymous`. Constraint filter: `createdByAndNo
 | `/account/store_profile_image` | `storeProfileImage()`    |
 | `/notifications/get`           | `getNotifications()`     |
 | `/notifications/count`         | `getNotificationCount()` |
+
+**Availability / Online Status:**
+- The `/account/change_status` endpoint accepts a German `status` text that the server uses to determine notification behavior:
+  - `"verfügbar"` → user is available (green dot, notifications enabled)
+  - `"Bitte nicht stören!"` → user is busy (red dot, notifications suppressed)
+- The convenience function `setOnlineStatus('available' | 'do_not_disturb')` sends the appropriate German text.
+- Exported constants: `STATUS_AVAILABLE = 'verfügbar'`, `STATUS_DND = 'Bitte nicht stören!'`.
 
 ### Security
 
@@ -668,8 +676,8 @@ The following behaviors have been confirmed via live testing against schul.cloud
 Fields confirmed via live `message_sync` events and REST API:
 
 - `files?: MessageFile[]` — attached files
-- `reply_to?: number | null` — **Important:** When sending a reply via `sendMessage()`, the stashcat backend API expects the field **`reply_to`** (not `reply_to_id`) containing the message ID as a Number. The response contains `reply_to` as an object `{ message_id, message_hash, message_verification }`.
-- `reply_to_id?: string` — TypeScript interface field name (internal), but the API payload uses `reply_to`
+- `reply_to?: number | { message_id: number; message_hash: string; message_verification?: string } | null` — When sending a reply, the API expects **`reply_to`** (not `reply_to_id`) as a Number. The response contains `reply_to` as an object with `message_id`, `message_hash`, and optionally `message_verification`.
+- `reply_to_id?: string` — TypeScript interface field name (internal only), the API payload uses `reply_to`
 - `likes?: number` — number of likes
 - `liked?: boolean` — whether the current user liked this message
 - `flagged?: boolean` — whether the current user flagged this message
@@ -902,6 +910,13 @@ Extended `ActiveDevice` with key transfer fields:
 - `last_login?: string` — Last login timestamp
 - `last_request?: string` — Last request timestamp
 - `name?: string` — Device name
+
+### Account Status Constants (`src/account/account.ts`)
+
+- `STATUS_AVAILABLE = 'verfügbar'` — Sets user as available (green dot, notifications enabled)
+- `STATUS_DND = 'Bitte nicht stören!'` — Sets user as busy (red dot, notifications suppressed)
+- `OnlineStatus` type: `'available' | 'do_not_disturb'`
+- `setOnlineStatus(status)` convenience method sends the German status text to `/account/change_status`
 
 ### Index Exports
 
