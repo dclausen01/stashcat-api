@@ -157,23 +157,11 @@ export class AccountManager {
    * Delete a notification
    */
   async deleteNotification(notificationId: string): Promise<void> {
-    const data = this.api.createAuthenticatedRequestData({ id: notificationId });
+    const data = this.api.createAuthenticatedRequestData({ notification_id: notificationId });
     try {
       await this.api.post('/notifications/delete', data);
     } catch (error) {
       throw new Error(`Failed to delete notification: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-
-  /**
-   * Delete all notifications
-   */
-  async deleteAllNotifications(): Promise<void> {
-    const data = this.api.createAuthenticatedRequestData({});
-    try {
-      await this.api.post('/notifications/delete_all', data);
-    } catch (error) {
-      throw new Error(`Failed to delete all notifications: ${error instanceof Error ? error.message : error}`);
     }
   }
 }
