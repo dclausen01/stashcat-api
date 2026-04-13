@@ -54,5 +54,9 @@ export declare class AccountManager {
      * Delete a notification
      */
     deleteNotification(notificationId: string): Promise<void>;
+    /**
+     * Delete all notifications
+     */
+    deleteAllNotifications(): Promise<void>;
 }
 //# sourceMappingURL=account.d.ts.map

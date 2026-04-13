@@ -450,6 +450,10 @@ class StashcatClient {
         this.requireAuth();
         return this.account.deleteNotification(notificationId);
     }
+    async deleteAllNotifications() {
+        this.requireAuth();
+        return this.account.deleteAllNotifications();
+    }
     // ─── Calendar ───────────────────────────────────────────────────────────
     async listEvents(options) {
         this.requireAuth();

@@ -200,6 +200,7 @@ export declare class StashcatClient {
     getNotifications(limit?: number, offset?: number): Promise<Notification[]>;
     getNotificationCount(): Promise<number>;
     deleteNotification(notificationId: string): Promise<void>;
+    deleteAllNotifications(): Promise<void>;
     listEvents(options: ListEventsOptions): Promise<CalendarEvent[]>;
     getEventDetails(eventIds: string[]): Promise<CalendarEvent | null>;
     createEvent(options: CreateEventOptions): Promise<string>;
