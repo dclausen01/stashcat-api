@@ -629,6 +629,21 @@ class StashcatClient {
     static encryptWithPublicKey(publicKeyPem, data) {
         return security_1.SecurityManager.encryptWithPublicKey(publicKeyPem, data);
     }
+    /**
+     * Set missing encryption keys for channel/conversation members.
+     * Requires E2E to be unlocked first.
+     */
+    async setMissingKey(type, id, keys) {
+        this.requireAuth();
+        return this.security.setMissingKey(type, id, keys);
+    }
+    /**
+     * Get members who don't have encryption keys for a channel/conversation.
+     */
+    async getMembersWithoutKeys(type, id) {
+        this.requireAuth();
+        return this.security.getMembersWithoutKeys(type, id);
+    }
     // ─── Device-to-Device Key Transfer ───────────────────────────────────────
     /**
      * Login without E2E unlock. The client remains authenticated but E2E is not unlocked.

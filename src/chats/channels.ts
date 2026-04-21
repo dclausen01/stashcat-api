@@ -19,14 +19,15 @@ export interface CreateChannelOptions {
   channel_name: string;
   company: string;
   description?: string;
-  /** 'public' | 'private' */
+  /** 'public' | 'private' | 'closed' */
   type?: string;
   visible?: boolean;
-  writable?: boolean;
-  inviteable?: boolean;
+  writable?: boolean | string;
+  inviteable?: boolean | string;
   password?: string;
   password_repeat?: string;
   encryption_key?: string;
+  encryption_key_signature?: string;
   show_activities?: boolean;
   show_membership_activities?: boolean;
 }

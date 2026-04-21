@@ -60,6 +60,26 @@ export declare class SecurityManager {
      */
     static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer;
     /**
+     * Set missing encryption keys for channel/conversation members.
+     * Used to distribute AES channel keys to members by encrypting them
+     * with each member's public RSA key.
+     */
+    setMissingKey(type: 'channel' | 'conversation', id: string, keys: Array<{
+        user_id: string;
+        key: string;
+        key_signature: string;
+    }>): Promise<void>;
+    /**
+     * Get members who don't have encryption keys for a channel/conversation.
+     */
+    getMembersWithoutKeys(type: 'channel' | 'conversation', id: string): Promise<Array<{
+        id: string;
+        first_name?: string;
+        last_name?: string;
+        mx_user_id?: string;
+        public_key?: string;
+    }>>;
+    /**
      * Set file access key (grants access to an encrypted file for a target user/channel)
      */
     setFileAccessKey(fileId: string, target: string, targetId: string, key: string, iv: string): Promise<void>;

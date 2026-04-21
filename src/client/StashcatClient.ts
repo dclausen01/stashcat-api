@@ -824,6 +824,30 @@ export class StashcatClient {
     return SecurityManager.encryptWithPublicKey(publicKeyPem, data);
   }
 
+  /**
+   * Set missing encryption keys for channel/conversation members.
+   * Requires E2E to be unlocked first.
+   */
+  async setMissingKey(
+    type: 'channel' | 'conversation',
+    id: string,
+    keys: Array<{ user_id: string; key: string; key_signature: string }>
+  ): Promise<void> {
+    this.requireAuth();
+    return this.security.setMissingKey(type, id, keys);
+  }
+
+  /**
+   * Get members who don't have encryption keys for a channel/conversation.
+   */
+  async getMembersWithoutKeys(
+    type: 'channel' | 'conversation',
+    id: string
+  ): Promise<Array<{ id: string; first_name?: string; last_name?: string; mx_user_id?: string; public_key?: string }>> {
+    this.requireAuth();
+    return this.security.getMembersWithoutKeys(type, id);
+  }
+
   // ─── Device-to-Device Key Transfer ───────────────────────────────────────
 
   /**

@@ -153,6 +153,48 @@ export class SecurityManager {
   }
 
   /**
+   * Set missing encryption keys for channel/conversation members.
+   * Used to distribute AES channel keys to members by encrypting them
+   * with each member's public RSA key.
+   */
+  async setMissingKey(
+    type: 'channel' | 'conversation',
+    id: string,
+    keys: Array<{
+      user_id: string;
+      key: string; // base64-encoded RSA-encrypted AES key
+      key_signature: string; // hex-encoded signature
+    }>
+  ): Promise<void> {
+    const data = this.api.createAuthenticatedRequestData({
+      type,
+      id,
+      keys,
+    });
+    try {
+      await this.api.post('/security/set_missing_key', data);
+    } catch (error) {
+      throw new Error(`Failed to set missing keys: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * Get members who don't have encryption keys for a channel/conversation.
+   */
+  async getMembersWithoutKeys(
+    type: 'channel' | 'conversation',
+    id: string
+  ): Promise<Array<{ id: string; first_name?: string; last_name?: string; mx_user_id?: string; public_key?: string }>> {
+    const data = this.api.createAuthenticatedRequestData({ type, type_id: id });
+    try {
+      const response = await this.api.post<{ members_without_keys: Array<{ id: string; first_name?: string; last_name?: string; mx_user_id?: string; public_key?: string }> }>('/message/list_chat_members_not_having_keys', data);
+      return response.members_without_keys || [];
+    } catch (error) {
+      throw new Error(`Failed to get members without keys: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
    * Set file access key (grants access to an encrypted file for a target user/channel)
    */
   async setFileAccessKey(

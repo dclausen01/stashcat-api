@@ -144,6 +144,37 @@ class SecurityManager {
         return crypto.publicEncrypt({ key: publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha1' }, data);
     }
     /**
+     * Set missing encryption keys for channel/conversation members.
+     * Used to distribute AES channel keys to members by encrypting them
+     * with each member's public RSA key.
+     */
+    async setMissingKey(type, id, keys) {
+        const data = this.api.createAuthenticatedRequestData({
+            type,
+            id,
+            keys,
+        });
+        try {
+            await this.api.post('/security/set_missing_key', data);
+        }
+        catch (error) {
+            throw new Error(`Failed to set missing keys: ${error instanceof Error ? error.message : error}`);
+        }
+    }
+    /**
+     * Get members who don't have encryption keys for a channel/conversation.
+     */
+    async getMembersWithoutKeys(type, id) {
+        const data = this.api.createAuthenticatedRequestData({ type, type_id: id });
+        try {
+            const response = await this.api.post('/message/list_chat_members_not_having_keys', data);
+            return response.members_without_keys || [];
+        }
+        catch (error) {
+            throw new Error(`Failed to get members without keys: ${error instanceof Error ? error.message : error}`);
+        }
+    }
+    /**
      * Set file access key (grants access to an encrypted file for a target user/channel)
      */
     async setFileAccessKey(fileId, target, targetId, key, iv) {

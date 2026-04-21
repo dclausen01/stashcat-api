@@ -251,6 +251,25 @@ export declare class StashcatClient {
      */
     static encryptWithPublicKey(publicKeyPem: string, data: Buffer): Buffer;
     /**
+     * Set missing encryption keys for channel/conversation members.
+     * Requires E2E to be unlocked first.
+     */
+    setMissingKey(type: 'channel' | 'conversation', id: string, keys: Array<{
+        user_id: string;
+        key: string;
+        key_signature: string;
+    }>): Promise<void>;
+    /**
+     * Get members who don't have encryption keys for a channel/conversation.
+     */
+    getMembersWithoutKeys(type: 'channel' | 'conversation', id: string): Promise<Array<{
+        id: string;
+        first_name?: string;
+        last_name?: string;
+        mx_user_id?: string;
+        public_key?: string;
+    }>>;
+    /**
      * Login without E2E unlock. The client remains authenticated but E2E is not unlocked.
      * Call `completeKeyTransferWithCode()` or `unlockE2EWithPrivateKey()` afterwards to enable E2E.
      *
