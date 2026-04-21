@@ -58,7 +58,7 @@ export class RealtimeManager {
         transports: ['websocket', 'polling'],
         reconnection: this.options.reconnect,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 10,
+        reconnectionAttempts: Infinity, // Never give up — server-side disconnect handler manages retry
         timeout: 5000,
         forceNew: true,
         // KEIN query-param, KEIN withCredentials — Auth geschieht via emit nach connect

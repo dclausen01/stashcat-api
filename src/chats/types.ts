@@ -31,10 +31,40 @@ export interface Channel {
 
 export interface ChannelMember {
   id: string;
-  user_id: string;
-  channel_id: string;
-  role: string;
-  joined_at: string;
+  user_id?: string;
+  channel_id?: string;
+  role?: string;
+  joined_at?: string;
+  first_name?: string;
+  last_name?: string;
+  image?: string;
+  email?: string | null;
+  active?: string;
+  deleted?: string | null;
+  allows_voip_calls?: boolean;
+  mx_user_id?: string;
+  federated?: boolean;
+  online?: boolean;
+  public_key?: string;
+  public_key_signature?: string;
+  public_signing_key?: string;
+  public_key_ca_signature?: string;
+  socket_id?: string;
+  status?: unknown;
+  user_status?: unknown;
+  quota?: string;
+  quota_byte?: number;
+  used_quota?: number;
+  personal_used_quota?: number;
+  email_validated?: string;
+  notifications?: string;
+  last_login?: string;
+  language?: string;
+  manager?: boolean;
+  joined?: string;
+  may_write?: boolean;
+  membership_requested?: boolean;
+  membership_pending?: boolean;
 }
 
 export interface Conversation {
