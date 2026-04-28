@@ -26,7 +26,7 @@ export { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderList
 
 // Broadcast
 export { BroadcastManager } from './broadcast/broadcast';
-export { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from './broadcast/types';
+export { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions } from './broadcast/types';
 
 // Calendar
 export { CalendarManager } from './calendar/calendar';

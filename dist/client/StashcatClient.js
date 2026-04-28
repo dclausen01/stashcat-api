@@ -512,9 +512,9 @@ class StashcatClient {
         this.requireAuth();
         return this.broadcast.removeMembers(listId, memberIds);
     }
-    async listBroadcastMembers(listId, sorting) {
+    async listBroadcastMembers(listId, options) {
         this.requireAuth();
-        return this.broadcast.listMembers(listId, sorting);
+        return this.broadcast.listMembers(listId, options);
     }
     async getBroadcastContent(options) {
         this.requireAuth();

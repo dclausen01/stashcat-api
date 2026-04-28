@@ -1,6 +1,6 @@
 import { StashcatAPI } from '../api/request';
 import { Message } from '../chats/types';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from './types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions } from './types';
 export declare class BroadcastManager {
     private api;
     constructor(api: StashcatAPI);
@@ -33,9 +33,8 @@ export declare class BroadcastManager {
     removeMembers(listId: string, memberIds: string[]): Promise<void>;
     /**
      * List members of a broadcast list.
-     * @param sorting Sort fields, e.g. ['firstName', 'lastName']
      */
-    listMembers(listId: string, sorting?: BroadcastMemberSortField[]): Promise<unknown[]>;
+    listMembers(listId: string, options?: BroadcastMemberListOptions): Promise<unknown[]>;
     /**
      * Get messages (content) from a broadcast list.
      */

@@ -1,6 +1,6 @@
 import { StashcatAPI } from '../api/request';
 import { Message } from '../chats/types';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from './types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions } from './types';
 
 export class BroadcastManager {
   constructor(private api: StashcatAPI) {}
@@ -98,12 +98,14 @@ export class BroadcastManager {
 
   /**
    * List members of a broadcast list.
-   * @param sorting Sort fields, e.g. ['firstName', 'lastName']
    */
-  async listMembers(listId: string, sorting: BroadcastMemberSortField[] = ['firstName', 'lastName']): Promise<unknown[]> {
+  async listMembers(listId: string, options: BroadcastMemberListOptions = {}): Promise<unknown[]> {
+    const sorting = options.sorting ?? ['firstName', 'lastName'];
     const data = this.api.createAuthenticatedRequestData({
       list_id: listId,
       sorting: JSON.stringify(sorting),
+      limit: options.limit ?? 50,
+      offset: options.offset ?? 0,
     });
     try {
       const response = await this.api.post<{ list_members: unknown[] }>('/broadcast/list_members', data);
