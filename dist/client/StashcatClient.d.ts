@@ -12,7 +12,7 @@ import { PrivateKeyResponse } from '../security/security';
 import { RealtimeManager } from '../realtime/realtime';
 import { RealtimeManagerOptions } from '../realtime/types';
 import { CalendarEvent, CreateEventOptions, EditEventOptions, ListEventsOptions, EventInviteStatus, AvailableCalendar } from '../calendar/types';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField } from '../broadcast/types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions, BroadcastMember } from '../broadcast/types';
 import { Poll, PollListItem, PollQuestion, PollAnswer, PollUser, PollConstraint, PollInviteTarget, CreatePollOptions, EditPollOptions, CreateQuestionOptions, EditQuestionOptions, CreateAnswerOptions, EditAnswerOptions } from '../poll/types';
 export interface StashcatClientConfig extends StashcatConfig {
     email?: string;
@@ -215,7 +215,7 @@ export declare class StashcatClient {
     renameBroadcast(listId: string, name: string): Promise<void>;
     addBroadcastMembers(listId: string, memberIds: string[]): Promise<void>;
     removeBroadcastMembers(listId: string, memberIds: string[]): Promise<void>;
-    listBroadcastMembers(listId: string, sorting?: BroadcastMemberSortField[]): Promise<unknown[]>;
+    listBroadcastMembers(listId: string, options?: BroadcastMemberListOptions): Promise<BroadcastMember[]>;
     getBroadcastContent(options: BroadcastContentOptions): Promise<Message[]>;
     sendBroadcastMessage(options: SendBroadcastOptions): Promise<Message>;
     listPolls(constraint: PollConstraint, companyId?: string): Promise<PollListItem[]>;

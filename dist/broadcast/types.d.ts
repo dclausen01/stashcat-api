@@ -32,4 +32,19 @@ export interface SendBroadcastOptions {
 }
 /** Sort field for member listing */
 export type BroadcastMemberSortField = 'firstName' | 'lastName' | string;
+/** Options for listing broadcast members */
+export interface BroadcastMemberListOptions {
+    limit?: number;
+    offset?: number;
+}
+/** A member entry returned by /broadcast/list_members */
+export interface BroadcastMember {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    image?: string;
+    online?: boolean;
+    deleted?: string | null;
+}
 //# sourceMappingURL=types.d.ts.map
