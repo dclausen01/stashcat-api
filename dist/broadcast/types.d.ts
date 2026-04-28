@@ -36,6 +36,15 @@ export type BroadcastMemberSortField = 'firstName' | 'lastName' | string;
 export interface BroadcastMemberListOptions {
     limit?: number;
     offset?: number;
-    sorting?: BroadcastMemberSortField[];
+}
+/** A member entry returned by /broadcast/list_members */
+export interface BroadcastMember {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    image?: string;
+    online?: boolean;
+    deleted?: string | null;
 }
 //# sourceMappingURL=types.d.ts.map

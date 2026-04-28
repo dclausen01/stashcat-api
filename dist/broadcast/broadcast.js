@@ -100,11 +100,10 @@ class BroadcastManager {
      * List members of a broadcast list.
      */
     async listMembers(listId, options = {}) {
-        const sorting = options.sorting ?? ['firstName', 'lastName'];
         const data = this.api.createAuthenticatedRequestData({
             list_id: listId,
-            sorting: JSON.stringify(sorting),
-            limit: options.limit ?? 50,
+            sorting: JSON.stringify(['firstName', 'lastName']),
+            limit: options.limit ?? 200,
             offset: options.offset ?? 0,
         });
         try {

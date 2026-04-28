@@ -1,6 +1,6 @@
 import { StashcatAPI } from '../api/request';
 import { Message } from '../chats/types';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions } from './types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions, BroadcastMember } from './types';
 
 export class BroadcastManager {
   constructor(private api: StashcatAPI) {}
@@ -99,16 +99,15 @@ export class BroadcastManager {
   /**
    * List members of a broadcast list.
    */
-  async listMembers(listId: string, options: BroadcastMemberListOptions = {}): Promise<unknown[]> {
-    const sorting = options.sorting ?? ['firstName', 'lastName'];
+  async listMembers(listId: string, options: BroadcastMemberListOptions = {}): Promise<BroadcastMember[]> {
     const data = this.api.createAuthenticatedRequestData({
       list_id: listId,
-      sorting: JSON.stringify(sorting),
-      limit: options.limit ?? 50,
+      sorting: JSON.stringify(['firstName', 'lastName']),
+      limit: options.limit ?? 200,
       offset: options.offset ?? 0,
     });
     try {
-      const response = await this.api.post<{ list_members: unknown[] }>('/broadcast/list_members', data);
+      const response = await this.api.post<{ list_members: BroadcastMember[] }>('/broadcast/list_members', data);
       return response.list_members || [];
     } catch (error) {
       throw new Error(`Failed to list broadcast members: ${error instanceof Error ? error.message : error}`);

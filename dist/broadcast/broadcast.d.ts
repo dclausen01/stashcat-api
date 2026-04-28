@@ -1,6 +1,6 @@
 import { StashcatAPI } from '../api/request';
 import { Message } from '../chats/types';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions } from './types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions, BroadcastMember } from './types';
 export declare class BroadcastManager {
     private api;
     constructor(api: StashcatAPI);
@@ -34,7 +34,7 @@ export declare class BroadcastManager {
     /**
      * List members of a broadcast list.
      */
-    listMembers(listId: string, options?: BroadcastMemberListOptions): Promise<unknown[]>;
+    listMembers(listId: string, options?: BroadcastMemberListOptions): Promise<BroadcastMember[]>;
     /**
      * Get messages (content) from a broadcast list.
      */

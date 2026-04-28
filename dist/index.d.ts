@@ -14,7 +14,7 @@ export { STATUS_AVAILABLE, STATUS_DND, OnlineStatus } from './account/account';
 export { FileManager } from './files/files';
 export { FileInfo, FolderItem, FolderContent, FolderEntry, FileEntry, FolderListOptions, FileUploadOptions, FileQuota, FileStorageType } from './files/types';
 export { BroadcastManager } from './broadcast/broadcast';
-export { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions } from './broadcast/types';
+export { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions, BroadcastMember } from './broadcast/types';
 export { CalendarManager } from './calendar/calendar';
 export { CalendarEvent, EventType, EventInviteStatus, EventRepeat, EventInvite, EventUser, CreateEventOptions, EditEventOptions, ListEventsOptions, AvailableCalendar } from './calendar/types';
 export { PollManager } from './poll/poll';

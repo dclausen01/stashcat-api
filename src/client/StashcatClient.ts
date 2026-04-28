@@ -18,7 +18,7 @@ import { RealtimeManagerOptions } from '../realtime/types';
 import { CalendarManager } from '../calendar/calendar';
 import { CalendarEvent, CreateEventOptions, EditEventOptions, ListEventsOptions, EventInviteStatus, AvailableCalendar } from '../calendar/types';
 import { BroadcastManager } from '../broadcast/broadcast';
-import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberSortField, BroadcastMemberListOptions } from '../broadcast/types';
+import { Broadcast, BroadcastContentOptions, SendBroadcastOptions, BroadcastMemberListOptions, BroadcastMember } from '../broadcast/types';
 import { PollManager } from '../poll/poll';
 import {
   Poll, PollListItem, PollQuestion, PollAnswer, PollUser,
@@ -678,7 +678,7 @@ export class StashcatClient {
     return this.broadcast.removeMembers(listId, memberIds);
   }
 
-  async listBroadcastMembers(listId: string, options?: BroadcastMemberListOptions): Promise<unknown[]> {
+  async listBroadcastMembers(listId: string, options?: BroadcastMemberListOptions): Promise<BroadcastMember[]> {
     this.requireAuth();
     return this.broadcast.listMembers(listId, options);
   }
