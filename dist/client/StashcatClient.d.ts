@@ -162,6 +162,7 @@ export declare class StashcatClient {
     sendMessage(options: SendMessageOptions): Promise<Message>;
     deleteMessage(messageId: string): Promise<void>;
     markAsRead(id: string, chatType: 'channel' | 'conversation', messageId: string): Promise<void>;
+    markChatAsUnread(chatType: 'channel' | 'conversation', chatId: string): Promise<void>;
     likeMessage(messageId: string): Promise<void>;
     listLikes(messageId: string): Promise<MessageLiker[]>;
     unlikeMessage(messageId: string): Promise<void>;

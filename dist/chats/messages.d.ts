@@ -53,6 +53,8 @@ export declare class MessageManager {
     flagMessage(messageId: string): Promise<void>;
     /** Unflag a message */
     unflagMessage(messageId: string): Promise<void>;
+    /** Mark a channel or conversation as unread */
+    markChatAsUnread(chatType: 'channel' | 'conversation', chatId: string): Promise<void>;
     /** Get flagged messages in a channel or conversation */
     getFlaggedMessages(type: 'channel' | 'conversation', typeId: string, options?: {
         limit?: number;
