@@ -329,6 +329,10 @@ class StashcatClient {
         this.requireAuth();
         return this.messages.markAsRead(id, chatType, messageId);
     }
+    async markChatAsUnread(chatType, chatId) {
+        this.requireAuth();
+        return this.messages.markChatAsUnread(chatType, chatId);
+    }
     async likeMessage(messageId) {
         this.requireAuth();
         return this.messages.likeMessage(messageId);

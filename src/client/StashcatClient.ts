@@ -443,6 +443,11 @@ export class StashcatClient {
     return this.messages.markAsRead(id, chatType, messageId);
   }
 
+  async markChatAsUnread(chatType: 'channel' | 'conversation', chatId: string): Promise<void> {
+    this.requireAuth();
+    return this.messages.markChatAsUnread(chatType, chatId);
+  }
+
   async likeMessage(messageId: string): Promise<void> {
     this.requireAuth();
     return this.messages.likeMessage(messageId);
