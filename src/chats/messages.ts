@@ -193,6 +193,16 @@ export class MessageManager {
     }
   }
 
+  /** Mark a channel or conversation as unread */
+  async markChatAsUnread(chatType: 'channel' | 'conversation', chatId: string): Promise<void> {
+    const request = this.api.createAuthenticatedRequestData({ chat_type: chatType, chat_id: chatId });
+    try {
+      await this.api.post('/message/mark_chat_as_unread', request);
+    } catch (error) {
+      throw new Error(`Failed to mark chat as unread: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
   /** Get flagged messages in a channel or conversation */
   async getFlaggedMessages(
     type: 'channel' | 'conversation',
