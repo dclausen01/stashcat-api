@@ -16,6 +16,8 @@ export interface FileInfo {
     ext?: string;
     encrypted: boolean;
     e2e_iv?: string | null;
+    /** Dateischlüssel je Chat (nur bei verschlüsselten Dateien) */
+    keys?: import('../chats/types').FileKeyEntry[];
     /** Ordner-Typ: "channel", "conversation" oder "personal" */
     folder_type?: string;
     type_id?: string;

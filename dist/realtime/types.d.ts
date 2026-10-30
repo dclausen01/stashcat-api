@@ -15,6 +15,10 @@ export interface RealtimeEvents {
      * Neue oder aktualisierte Nachricht in Channel oder Conversation.
      * Payload: vollständiges Message-Objekt (identisch mit REST /message/content)
      * Live-verifiziert: channel_id, text (verschlüsselt), sender, time, etc.
+     *
+     * ACHTUNG (live-verifiziert 2026-10-30): Für Nachrichten ANDERER Nutzer kam bei einem Bot-Account
+     * kein `message_sync`, nur `notification` — `message_sync` kam nur für die eigenen Nachrichten.
+     * Wer auf neue Nachrichten reagieren will, muss beide Events auswerten (und Duplikate filtern).
      */
     message_sync: (data: MessageSyncPayload) => void;
     /**
@@ -44,8 +48,12 @@ export interface RealtimeEvents {
     object_change: (data: unknown) => void;
     file_change: (data: unknown) => void;
     message_read: (data: unknown) => void;
+    /** Push-Benachrichtigung; enthält die neue Nachricht (inkl. Nachrichten anderer Nutzer, s. message_sync) */
     notification: (data: {
         message: MessageSyncPayload;
+        type?: string;
+        conversation_id?: number;
+        channel_id?: number;
     }) => void;
     new_invite: (data: unknown) => void;
     online_status_change: (data: unknown) => void;
@@ -128,6 +136,11 @@ export interface RealtimeManagerOptions {
     reconnect?: boolean;
     /** Debug-Modus: loggt alle empfangenen Events auf console (Standard: false) */
     debug?: boolean;
+    /**
+     * Intervall in ms für den Push-Heartbeat (Standard: 300000 = 5 Minuten, wie der Webclient; 0 = aus).
+     * Ohne Heartbeat verwirft der Push-Server die Anmeldung irgendwann still. Siehe `checkAuthentication()`.
+     */
+    heartbeatInterval?: number;
     /** Optionaler Catch-all-Handler für alle empfangenen Socket.io-Events (für externe Diagnose) */
     onAnyEvent?: (event: string, args: unknown[]) => void;
 }

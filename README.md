@@ -160,7 +160,7 @@ await client.setConversationFavorite(conversationId, true);
 await client.getMessages(id, 'channel', { limit: 50 });
 await client.sendMessage({ target: id, target_type: 'channel', text: 'Hello' });
 await client.deleteMessage(messageId);
-await client.markAsRead(id, 'channel', messageId);
+await client.markAsRead(id, 'channel'); // markiert den ganzen Chat als gelesen
 await client.likeMessage(messageId);
 await client.flagMessage(messageId);
 await client.getFlaggedMessages('channel', channelId);

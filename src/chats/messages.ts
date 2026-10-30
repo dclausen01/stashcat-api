@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { StashcatAPI } from '../api/request';
 import { Message, MessageLiker } from './types';
 import { CryptoManager } from '../encryption/crypto';
@@ -122,21 +123,28 @@ export class MessageManager {
   }
 
   /**
-   * Mark messages as read up to (and including) the given message ID.
-   * Pass the ID of the newest visible message to mark all previous as read.
+   * Mark a chat as read.
+   *
+   * There is no dedicated endpoint (`/message/mark_read` returns HTTP 404, live-verified 2026-10-30):
+   * the schul.cloud web client resets the unread counter by simply fetching `/message/content`
+   * (`resetUnreadMessagesByServer` in the web bundle). `messageId` is kept for API compatibility
+   * but has no effect — the whole chat is marked as read.
    */
   async markAsRead(
     id: string,
     chatType: 'channel' | 'conversation',
-    messageId: string
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _messageId?: string
   ): Promise<void> {
     const sourceIdKey = chatType === 'conversation' ? 'conversation_id' : 'channel_id';
     const request = this.api.createAuthenticatedRequestData({
       [sourceIdKey]: id,
-      message_id: messageId,
+      source: chatType,
+      limit: 1,
+      offset: 0,
     });
     try {
-      await this.api.post('/message/mark_read', request);
+      await this.api.post('/message/content', request);
     } catch (error) {
       throw new Error(`Failed to mark as read: ${error instanceof Error ? error.message : error}`);
     }
@@ -223,19 +231,22 @@ export class MessageManager {
     }
   }
 
-  /** Download a file as a Buffer, optionally decrypting E2E-encrypted content */
-  async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, key?: Buffer): Promise<Buffer> {
+  /**
+   * Download a file as a Buffer. With `fileKey` (the file's own decrypted AES key — NOT the chat key,
+   * see `StashcatClient.getFileKey()`), E2E-encrypted content is decrypted (AES-256-CBC, `e2e_iv`).
+   */
+  async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, fileKey?: Buffer): Promise<Buffer> {
     try {
       // API returns raw binary — file ID goes as ?id= query param, auth in POST body
       const rawData = await this.api.downloadBinary(file.id);
 
-      if (file.encrypted && key) {
+      if (file.encrypted && fileKey) {
         if (!file.e2e_iv) {
           throw new Error(`Cannot decrypt file ${file.id}: missing e2e_iv`);
         }
-        const iv = CryptoManager.hexToBuffer(file.e2e_iv);
-        const decrypted = CryptoManager.decrypt(rawData.toString('hex'), key, iv);
-        return Buffer.from(decrypted, 'hex');
+        // Binärsicher entschlüsseln — CryptoManager.decrypt liefert UTF-8-Text und zerstört Binärdaten
+        const decipher = crypto.createDecipheriv('aes-256-cbc', fileKey, CryptoManager.hexToBuffer(file.e2e_iv));
+        return Buffer.concat([decipher.update(rawData), decipher.final()]);
       }
 
       return rawData;

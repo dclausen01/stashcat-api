@@ -118,6 +118,23 @@ export interface ConversationParticipant {
     joined_at: string;
     left_at?: string;
 }
+/**
+ * Schlüssel-Eintrag einer E2E-verschlüsselten Datei (`file.keys[]`): der Dateischlüssel,
+ * AES-256-CBC-verschlüsselt mit dem Schlüssel des Chats `chat_id` (bzw. per RSA in `chat_key`).
+ * Live-verifiziert 2026-10-30 (entspricht `decryptFileKey` im schul.cloud-Webclient).
+ */
+export interface FileKeyEntry {
+    chat_id?: string | number;
+    /** 'conversation' oder 'channel' */
+    type?: string;
+    /** Dateischlüssel, mit dem Chat-Schlüssel verschlüsselt (hex) */
+    key: string;
+    /** IV (hex) für `key` */
+    iv: string;
+    /** Alternativ: Chat-Schlüssel, RSA-OAEP-verschlüsselt mit dem eigenen öffentlichen Schlüssel */
+    chat_key?: string | null;
+    file_id?: string | number;
+}
 export interface MessageFile {
     id: string;
     name: string;
@@ -131,6 +148,8 @@ export interface MessageFile {
     ext?: string;
     encrypted?: boolean;
     e2e_iv?: string | null;
+    /** Dateischlüssel je Chat (nur bei verschlüsselten Dateien) */
+    keys?: FileKeyEntry[];
     /** Ordner-Typ des Speichers, z. B. "channel" oder "conversation" */
     folder_type?: string;
     type_id?: string;

@@ -24,10 +24,21 @@ export declare class RealtimeManager {
     private hiddenId;
     private options;
     private handlers;
+    private heartbeatTimer?;
     private discoveredEvents;
     constructor(clientKey: string, deviceId: string, hiddenId: string, options?: RealtimeManagerOptions);
     /** Verbindet mit dem Push-Server. Gibt ein Promise zurück das resolved wenn die Verbindung steht. */
     connect(): Promise<void>;
+    /**
+     * Prüft per `heartbeat`, ob der Push-Server diesen Socket noch als angemeldet führt, und meldet
+     * sich bei negativer oder fehlender Antwort neu an. Der Server verwirft die Anmeldung nach einiger
+     * Zeit, ohne die Verbindung zu trennen — danach kommen still keine Events mehr. Der schul.cloud-
+     * Webclient prüft deshalb alle 5 Minuten (`checkAuthentification`, live-verifiziert 2026-10-30).
+     * Läuft automatisch im Intervall `heartbeatInterval`; kann auch manuell aufgerufen werden.
+     *
+     * @returns 'ok' | 'reauthenticated' (Anmeldung war abgelaufen) | 'no_answer' (vorsorglich neu angemeldet) | 'disconnected'
+     */
+    checkAuthentication(timeoutMs?: number): Promise<'ok' | 'reauthenticated' | 'no_answer' | 'disconnected'>;
     /** Trennt die Verbindung zum Push-Server */
     disconnect(): void;
     /** Gibt true zurück wenn aktuell verbunden */
@@ -46,6 +57,9 @@ export declare class RealtimeManager {
     getDiscoveredEvents(): string[];
     /** Sende Tipp-Indikator an einen Channel/Conversation */
     sendTyping(chatType: 'channel' | 'conversation', chatId: string): void;
+    private authenticate;
+    private startHeartbeat;
+    private stopHeartbeat;
     private _emit;
     /** Handler nach Reconnect wieder anmelden */
     private _reattachHandlers;

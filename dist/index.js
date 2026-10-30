@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RealtimeManager = exports.CryptoManager = exports.SecurityManager = exports.PollManager = exports.CalendarManager = exports.BroadcastManager = exports.FileManager = exports.STATUS_DND = exports.STATUS_AVAILABLE = exports.AccountManager = exports.UserManager = exports.MessageManager = exports.ConversationManager = exports.ChannelManager = exports.AuthManager = exports.StashcatAPI = exports.StashcatClient = void 0;
+exports.RealtimeManager = exports.CryptoManager = exports.SecurityManager = exports.PollManager = exports.CalendarManager = exports.BroadcastManager = exports.FileManager = exports.STATUS_DND = exports.STATUS_AVAILABLE = exports.AccountManager = exports.UserManager = exports.MessageManager = exports.ConversationManager = exports.ChannelManager = exports.AuthManager = exports.StashcatAPI = exports.decryptFileKeyEntry = exports.StashcatClient = void 0;
 var StashcatClient_1 = require("./client/StashcatClient");
 Object.defineProperty(exports, "StashcatClient", { enumerable: true, get: function () { return StashcatClient_1.StashcatClient; } });
+Object.defineProperty(exports, "decryptFileKeyEntry", { enumerable: true, get: function () { return StashcatClient_1.decryptFileKeyEntry; } });
 var request_1 = require("./api/request");
 Object.defineProperty(exports, "StashcatAPI", { enumerable: true, get: function () { return request_1.StashcatAPI; } });
 // Auth

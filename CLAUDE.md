@@ -127,7 +127,7 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 | `/message/content`               | `getMessages()`        |
 | `/message/send`                  | `sendMessage()`        |
 | `/message/delete`                | `deleteMessage()`      |
-| `/message/mark_read`             | `markAsRead()`         |
+| `/message/content` (limit 1)     | `markAsRead()` — es gibt kein `/message/mark_read` (404); der Webclient markiert Chats durch Abrufen als gelesen |
 | `/message/like`                  | `likeMessage()`        |
 | `/message/unlike`                | `unlikeMessage()`      |
 | `/message/list_likes`            | `listLikes()`          |
@@ -139,7 +139,7 @@ All requests use `POST` with `Content-Type: application/x-www-form-urlencoded`.
 
 | Endpoint         | Method                       |
 | ---------------- | ---------------------------- |
-| `/file/download` | `downloadFile()`             |
+| `/file/download` | `downloadFile()` (entschlüsselt E2E-Dateien automatisch, siehe „Datei-Verschlüsselung“) |
 | `/file/upload`   | `uploadFile()` (chunked)     |
 | `/file/info`     | `getFileInfo()`              |
 | `/file/infos`    | `FileManager.getFileInfos()` |
@@ -588,6 +588,15 @@ Additional events discovered from the Angular bundle (not yet live-verified):
 `send_encrypted_data_to_device`, `encrypted_data_from_device`,
 `device_to_device_message`, `one_time_key_claimed`, `new_mx_device`, `removed_mx_device`.
 
+### Live-Erkenntnisse (2026-10-30, Bot-Betrieb)
+
+- **`notification` statt `message_sync`:** Nachrichten anderer Nutzer kamen beim Bot-Account nur als `notification` (`{ message, type, conversation_id, conversation, reciever }`) an. `message_sync` kam nur für eigene Nachrichten. Wer auf neue Nachrichten reagiert, muss beide Events auswerten und Duplikate über `message.id` filtern.
+- **Heartbeat:** Der Push-Server verwirft die Socket-Anmeldung nach einiger Zeit, ohne die Verbindung zu trennen. Danach kommen still keine Events mehr. Der Webclient sendet deshalb alle 5 Minuten `heartbeat` mit einem Ack-Callback (`checkAuthentification`). Ist das Ack falsy, sendet er erneut `userid`. `RealtimeManager` macht das jetzt automatisch (`heartbeatInterval`, Standard 5 Minuten) und bietet `checkAuthentication()`.
+- **Reconnect:** Das `reconnect`-Event feuert in socket.io v4 am Manager (`socket.io.on('reconnect')`), nicht am Socket. Die frühere Neuanmeldung über `socket.on('reconnect')` lief deshalb nie.
+- **Erwähnungen:** Eine aus der Vorschlagsliste gewählte Erwähnung steht als `[@<User-ID>]` im Text (`parseUserMentions`). Getippt bleibt sie reiner Text (`@Name`).
+- **Personensuche:** `/manage/list_users` braucht Admin-Rechte (`no_permission`). `/message/availableContacts` gibt es auf api.stashcat.com nicht (404). Für normale Nutzer sucht man über `/users/listing` mit `company`, `search`, `limit`, `offset`, `key_hashes`, `sorting` (JSON); die Antwort steht in `payload.users`.
+- **Ungelesen-Zähler:** Bei Konversationen heißt das Feld `unread`, nicht `unread_count`.
+
 ### Typing Indicator
 
 Emit: `socket.emit('started-typing', chatType, chatId)`
@@ -645,10 +654,18 @@ The following behaviors have been confirmed via live testing against schul.cloud
 
 ### File Download
 
-- **URL format**: `GET {baseUrl}/file/download?device_id={deviceId}&client_key={clientKey}&file_id={fileId}`
+- **URL format**: `POST {baseUrl}/file/download?id={fileId}` mit `client_key`/`device_id` im Body
 - **Response**: Raw binary data (not base64)
-- **Decryption**: Binary → hex string → `CryptoManager.decrypt(hexString, key, iv)`
-- **IV source**: `file.e2e_iv` field — must be present for encrypted files (throws if missing)
+
+### Datei-Verschlüsselung (live-verifiziert 2026-10-30)
+
+E2E-verschlüsselte Dateien haben einen **eigenen AES-Schlüssel pro Datei**, nicht den Chat-Schlüssel (`decryptFileKey` im schul.cloud-Webclient):
+
+1. `file.keys[]` (in `message.files[]` bzw. `/file/info`) enthält Einträge `{ chat_id, type, key, iv, chat_key }`.
+2. `key` (hex) ist der Dateischlüssel, AES-256-CBC-verschlüsselt mit dem **Chat-Schlüssel** von `chat_id` und IV `iv` (hex). Alternativ steht in `chat_key` der Chat-Schlüssel RSA-verschlüsselt.
+3. Der Inhalt ist AES-256-CBC mit dem Dateischlüssel und `file.e2e_iv` verschlüsselt. Der Webclient arbeitet in Chunks, das Ergebnis entspricht aber CBC über die ganze Datei.
+
+`StashcatClient.downloadFile()` macht das automatisch, sobald E2E entsperrt ist (`getFileKey()`, `decryptFileKeyEntry()`). Früher wurde fälschlich direkt mit dem Chat-Schlüssel entschlüsselt, und das zudem über UTF-8-Text, was Binärdaten zerstörte. Auch Uploads ohne Verschlüsselung in verschlüsselte Chats sind möglich: Die Webclients machen das, wenn die Datei-Verschlüsselung aus ist.
 
 ### Folder Listing
 

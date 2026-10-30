@@ -1,11 +1,11 @@
-export { StashcatClient, StashcatClientConfig, SerializedSession } from './client/StashcatClient';
+export { StashcatClient, StashcatClientConfig, SerializedSession, decryptFileKeyEntry } from './client/StashcatClient';
 export { StashcatAPI, StashcatConfig } from './api/request';
 export { APIResponse, APIStatus } from './api/response';
 export { AuthManager, AuthConfig, AuthState } from './auth/login';
 export { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from './chats/channels';
 export { ConversationManager } from './chats/conversations';
 export { MessageManager, SendMessageOptions } from './chats/messages';
-export { Channel, ChannelMember, Conversation, ConversationParticipant, Message, MessageFile, MessageLiker, MessageSender, PaginationOptions } from './chats/types';
+export { Channel, ChannelMember, Conversation, ConversationParticipant, Message, MessageFile, FileKeyEntry, MessageLiker, MessageSender, PaginationOptions } from './chats/types';
 export { UserManager } from './users/users';
 export { User, Company, CompanyMember, ManagedUser, CompanyGroup } from './users/types';
 export { AccountManager } from './account/account';

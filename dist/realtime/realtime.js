@@ -30,6 +30,7 @@ class RealtimeManager {
             pushUrl: options.pushUrl ?? 'https://push.stashcat.com',
             reconnect: options.reconnect ?? true,
             debug: options.debug ?? false,
+            heartbeatInterval: options.heartbeatInterval ?? 5 * 60 * 1000,
             onAnyEvent: options.onAnyEvent,
         };
     }
@@ -55,11 +56,8 @@ class RealtimeManager {
                 }
                 // Authentifizierung: sofort nach connect 'userid' senden
                 // (entspricht onConnect() im Angular-Bundle: socket.emit(Qa.UserId, { hidden_id, device_id, client_key }))
-                this.socket.emit('userid', {
-                    hidden_id: this.hiddenId,
-                    device_id: this.deviceId,
-                    client_key: this.clientKey,
-                });
+                this.authenticate();
+                this.startHeartbeat();
                 if (this.options.debug) {
                     console.log('[Realtime] Auth-Emit "userid" gesendet, hidden_id =', this.hiddenId.slice(0, 8) + '…');
                 }
@@ -97,20 +95,49 @@ class RealtimeManager {
                     console.error('[Realtime] Fehler:', err.message);
                 this._emit('connect_error', err);
             });
-            // Nach Reconnect erneut authentifizieren
-            this.socket.on('reconnect', () => {
+            // Nach Reconnect erneut authentifizieren. Achtung: In socket.io v4 feuert 'reconnect' am
+            // Manager (socket.io), nicht am Socket — ein socket.on('reconnect') wird nie aufgerufen.
+            this.socket.io.on('reconnect', () => {
                 if (this.options.debug)
                     console.log('[Realtime] Wiederverbunden — sende erneut userid-Auth');
-                this.socket.emit('userid', {
-                    hidden_id: this.hiddenId,
-                    device_id: this.deviceId,
-                    client_key: this.clientKey,
-                });
+                this.authenticate();
+            });
+        });
+    }
+    /**
+     * Prüft per `heartbeat`, ob der Push-Server diesen Socket noch als angemeldet führt, und meldet
+     * sich bei negativer oder fehlender Antwort neu an. Der Server verwirft die Anmeldung nach einiger
+     * Zeit, ohne die Verbindung zu trennen — danach kommen still keine Events mehr. Der schul.cloud-
+     * Webclient prüft deshalb alle 5 Minuten (`checkAuthentification`, live-verifiziert 2026-10-30).
+     * Läuft automatisch im Intervall `heartbeatInterval`; kann auch manuell aufgerufen werden.
+     *
+     * @returns 'ok' | 'reauthenticated' (Anmeldung war abgelaufen) | 'no_answer' (vorsorglich neu angemeldet) | 'disconnected'
+     */
+    checkAuthentication(timeoutMs = 10000) {
+        const socket = this.socket;
+        if (!socket?.connected)
+            return Promise.resolve('disconnected');
+        return new Promise((resolve) => {
+            const timer = setTimeout(() => {
+                this.authenticate();
+                resolve('no_answer');
+            }, timeoutMs);
+            socket.emit('heartbeat', (authenticated) => {
+                clearTimeout(timer);
+                if (authenticated) {
+                    resolve('ok');
+                    return;
+                }
+                if (this.options.debug)
+                    console.log('[Realtime] Anmeldung abgelaufen — sende erneut userid-Auth');
+                this.authenticate();
+                resolve('reauthenticated');
             });
         });
     }
     /** Trennt die Verbindung zum Push-Server */
     disconnect() {
+        this.stopHeartbeat();
         this.socket?.disconnect();
         this.socket = undefined;
     }
@@ -159,6 +186,26 @@ class RealtimeManager {
             console.log(`[Realtime] sendTyping: ${chatType}/${chatId}`);
     }
     // ─── Intern ──────────────────────────────────────────────────────────────
+    authenticate() {
+        this.socket?.emit('userid', {
+            hidden_id: this.hiddenId,
+            device_id: this.deviceId,
+            client_key: this.clientKey,
+        });
+    }
+    startHeartbeat() {
+        this.stopHeartbeat();
+        if (!this.options.heartbeatInterval)
+            return;
+        this.heartbeatTimer = setInterval(() => void this.checkAuthentication(), this.options.heartbeatInterval);
+        // Den Prozess nicht nur wegen des Heartbeats am Leben halten
+        this.heartbeatTimer.unref?.();
+    }
+    stopHeartbeat() {
+        if (this.heartbeatTimer)
+            clearInterval(this.heartbeatTimer);
+        this.heartbeatTimer = undefined;
+    }
     _emit(event, ...args) {
         this.handlers.get(event)?.forEach(h => {
             try {
