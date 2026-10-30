@@ -39,10 +39,14 @@ export declare class MessageManager {
     /** Delete a message by ID */
     deleteMessage(messageId: string): Promise<void>;
     /**
-     * Mark messages as read up to (and including) the given message ID.
-     * Pass the ID of the newest visible message to mark all previous as read.
+     * Mark a chat as read.
+     *
+     * There is no dedicated endpoint (`/message/mark_read` returns HTTP 404, live-verified 2026-10-30):
+     * the schul.cloud web client resets the unread counter by simply fetching `/message/content`
+     * (`resetUnreadMessagesByServer` in the web bundle). `messageId` is kept for API compatibility
+     * but has no effect — the whole chat is marked as read.
      */
-    markAsRead(id: string, chatType: 'channel' | 'conversation', messageId: string): Promise<void>;
+    markAsRead(id: string, chatType: 'channel' | 'conversation', _messageId?: string): Promise<void>;
     /** Like a message */
     likeMessage(messageId: string): Promise<void>;
     /** List users who liked a message */
@@ -60,11 +64,14 @@ export declare class MessageManager {
         limit?: number;
         offset?: number;
     }): Promise<Message[]>;
-    /** Download a file as a Buffer, optionally decrypting E2E-encrypted content */
+    /**
+     * Download a file as a Buffer. With `fileKey` (the file's own decrypted AES key — NOT the chat key,
+     * see `StashcatClient.getFileKey()`), E2E-encrypted content is decrypted (AES-256-CBC, `e2e_iv`).
+     */
     downloadFile(file: {
         id: string;
         encrypted?: boolean;
         e2e_iv?: string | null;
-    }, key?: Buffer): Promise<Buffer>;
+    }, fileKey?: Buffer): Promise<Buffer>;
 }
 //# sourceMappingURL=messages.d.ts.map

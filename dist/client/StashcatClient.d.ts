@@ -3,7 +3,7 @@ import { AuthConfig, AuthState } from '../auth/types';
 import { RsaPrivateKeyJwk } from '../encryption/types';
 import { CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from '../chats/channels';
 import { SendMessageOptions } from '../chats/messages';
-import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
+import { Channel, ChannelMember, Conversation, FileKeyEntry, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
 import { OnlineStatus } from '../account/account';
 import { AccountSettings, ActiveDevice, Notification } from '../account/types';
@@ -172,11 +172,26 @@ export declare class StashcatClient {
         limit?: number;
         offset?: number;
     }): Promise<Message[]>;
+    /**
+     * Download a file. E2E-encrypted files are decrypted automatically when E2E is unlocked:
+     * the file key comes from `file.keys` (or `/file/info`), see `getFileKey()`.
+     * Pass `fileKey` to use an already decrypted file key; without E2E the raw bytes are returned.
+     */
     downloadFile(file: {
         id: string;
         encrypted?: boolean;
         e2e_iv?: string | null;
-    }, key?: Buffer): Promise<Buffer>;
+        keys?: FileKeyEntry[];
+    }, fileKey?: Buffer): Promise<Buffer>;
+    /**
+     * Decrypt the AES key of an E2E-encrypted file (live-verified 2026-10-30, `decryptFileKey` in the
+     * schul.cloud web client): every entry in `file.keys` holds the file key AES-256-CBC-encrypted with
+     * the key of chat `chat_id` (IV in `iv`), or the chat key itself RSA-encrypted in `chat_key`.
+     */
+    getFileKey(file: {
+        id: string;
+        keys?: FileKeyEntry[];
+    }): Promise<Buffer>;
     uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize?: number): Promise<FileInfo>;
     getFileInfo(fileId: string): Promise<FileInfo>;
     listFolder(options?: FolderListOptions): Promise<FolderContent>;
@@ -347,4 +362,6 @@ export declare class StashcatClient {
     createRealtimeManager(options?: RealtimeManagerOptions): Promise<RealtimeManager>;
     private requireAuth;
 }
+/** Entschlüsselt einen Eintrag aus `file.keys` mit dem Chat-Schlüssel → 32-Byte-Dateischlüssel. */
+export declare function decryptFileKeyEntry(entry: Pick<FileKeyEntry, 'key' | 'iv'>, chatKey: Buffer): Buffer;
 //# sourceMappingURL=StashcatClient.d.ts.map

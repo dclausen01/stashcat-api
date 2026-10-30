@@ -1,6 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageManager = void 0;
+const crypto = __importStar(require("crypto"));
 const crypto_1 = require("../encryption/crypto");
 class MessageManager {
     constructor(api) {
@@ -82,17 +116,25 @@ class MessageManager {
         }
     }
     /**
-     * Mark messages as read up to (and including) the given message ID.
-     * Pass the ID of the newest visible message to mark all previous as read.
+     * Mark a chat as read.
+     *
+     * There is no dedicated endpoint (`/message/mark_read` returns HTTP 404, live-verified 2026-10-30):
+     * the schul.cloud web client resets the unread counter by simply fetching `/message/content`
+     * (`resetUnreadMessagesByServer` in the web bundle). `messageId` is kept for API compatibility
+     * but has no effect — the whole chat is marked as read.
      */
-    async markAsRead(id, chatType, messageId) {
+    async markAsRead(id, chatType, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _messageId) {
         const sourceIdKey = chatType === 'conversation' ? 'conversation_id' : 'channel_id';
         const request = this.api.createAuthenticatedRequestData({
             [sourceIdKey]: id,
-            message_id: messageId,
+            source: chatType,
+            limit: 1,
+            offset: 0,
         });
         try {
-            await this.api.post('/message/mark_read', request);
+            await this.api.post('/message/content', request);
         }
         catch (error) {
             throw new Error(`Failed to mark as read: ${error instanceof Error ? error.message : error}`);
@@ -175,18 +217,21 @@ class MessageManager {
             throw new Error(`Failed to get flagged messages: ${error instanceof Error ? error.message : error}`);
         }
     }
-    /** Download a file as a Buffer, optionally decrypting E2E-encrypted content */
-    async downloadFile(file, key) {
+    /**
+     * Download a file as a Buffer. With `fileKey` (the file's own decrypted AES key — NOT the chat key,
+     * see `StashcatClient.getFileKey()`), E2E-encrypted content is decrypted (AES-256-CBC, `e2e_iv`).
+     */
+    async downloadFile(file, fileKey) {
         try {
             // API returns raw binary — file ID goes as ?id= query param, auth in POST body
             const rawData = await this.api.downloadBinary(file.id);
-            if (file.encrypted && key) {
+            if (file.encrypted && fileKey) {
                 if (!file.e2e_iv) {
                     throw new Error(`Cannot decrypt file ${file.id}: missing e2e_iv`);
                 }
-                const iv = crypto_1.CryptoManager.hexToBuffer(file.e2e_iv);
-                const decrypted = crypto_1.CryptoManager.decrypt(rawData.toString('hex'), key, iv);
-                return Buffer.from(decrypted, 'hex');
+                // Binärsicher entschlüsseln — CryptoManager.decrypt liefert UTF-8-Text und zerstört Binärdaten
+                const decipher = crypto.createDecipheriv('aes-256-cbc', fileKey, crypto_1.CryptoManager.hexToBuffer(file.e2e_iv));
+                return Buffer.concat([decipher.update(rawData), decipher.final()]);
             }
             return rawData;
         }

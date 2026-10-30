@@ -1,11 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StashcatClient = void 0;
+exports.decryptFileKeyEntry = decryptFileKeyEntry;
 const request_1 = require("../api/request");
 const login_1 = require("../auth/login");
 const channels_1 = require("../chats/channels");
 const conversations_1 = require("../chats/conversations");
 const messages_1 = require("../chats/messages");
+const crypto = __importStar(require("crypto"));
 const users_1 = require("../users/users");
 const account_1 = require("../account/account");
 const files_1 = require("../files/files");
@@ -358,9 +393,52 @@ class StashcatClient {
         return this.messages.getFlaggedMessages(type, typeId, options);
     }
     // ─── Files ───────────────────────────────────────────────────────────────
-    async downloadFile(file, key) {
+    /**
+     * Download a file. E2E-encrypted files are decrypted automatically when E2E is unlocked:
+     * the file key comes from `file.keys` (or `/file/info`), see `getFileKey()`.
+     * Pass `fileKey` to use an already decrypted file key; without E2E the raw bytes are returned.
+     */
+    async downloadFile(file, fileKey) {
         this.requireAuth();
-        return this.messages.downloadFile(file, key);
+        if (file.encrypted && !fileKey && this.security.isUnlocked()) {
+            let iv = file.e2e_iv;
+            if (!iv)
+                iv = (await this.files.getFileInfo(file.id)).e2e_iv;
+            fileKey = await this.getFileKey(file);
+            return this.messages.downloadFile({ ...file, e2e_iv: iv }, fileKey);
+        }
+        return this.messages.downloadFile(file, fileKey);
+    }
+    /**
+     * Decrypt the AES key of an E2E-encrypted file (live-verified 2026-10-30, `decryptFileKey` in the
+     * schul.cloud web client): every entry in `file.keys` holds the file key AES-256-CBC-encrypted with
+     * the key of chat `chat_id` (IV in `iv`), or the chat key itself RSA-encrypted in `chat_key`.
+     */
+    async getFileKey(file) {
+        this.requireAuth();
+        if (!this.security.isUnlocked())
+            throw new Error('E2E not unlocked — call unlockE2E() first');
+        const keys = file.keys?.length ? file.keys : (await this.files.getFileInfo(file.id)).keys ?? [];
+        let lastError = new Error(`File ${file.id} has no key entries`);
+        for (const entry of keys) {
+            try {
+                let chatKey;
+                if (entry.chat_key) {
+                    chatKey = this.security.decryptConversationKey(entry.chat_key, `file_chat_${entry.chat_id}`);
+                }
+                else if (entry.type === 'channel') {
+                    chatKey = await this.getChannelAesKey(String(entry.chat_id));
+                }
+                else {
+                    chatKey = await this.getConversationAesKey(String(entry.chat_id));
+                }
+                return decryptFileKeyEntry(entry, chatKey);
+            }
+            catch (error) {
+                lastError = error;
+            }
+        }
+        throw new Error(`Failed to decrypt key of file ${file.id}: ${lastError instanceof Error ? lastError.message : lastError}`);
     }
     async uploadFile(filePath, uploadOptions, chunkSize) {
         this.requireAuth();
@@ -772,4 +850,18 @@ class StashcatClient {
     }
 }
 exports.StashcatClient = StashcatClient;
+/** Entschlüsselt einen Eintrag aus `file.keys` mit dem Chat-Schlüssel → 32-Byte-Dateischlüssel. */
+function decryptFileKeyEntry(entry, chatKey) {
+    const data = /^[0-9a-f]+$/i.test(entry.key) && entry.key.length % 2 === 0
+        ? Buffer.from(entry.key, 'hex')
+        : Buffer.from(entry.key, 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', chatKey, Buffer.from(entry.iv, 'hex'));
+    const plain = Buffer.concat([decipher.update(data), decipher.final()]);
+    if (plain.length === 32)
+        return plain;
+    const text = plain.toString('utf8');
+    if (/^[0-9a-f]{64}$/i.test(text))
+        return Buffer.from(text, 'hex');
+    throw new Error(`unexpected file key length (${plain.length} bytes)`);
+}
 //# sourceMappingURL=StashcatClient.js.map

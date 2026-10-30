@@ -5,7 +5,8 @@ import { RsaPrivateKeyJwk, SigningKeyData } from '../encryption/types';
 import { ChannelManager, CreateChannelOptions, EditChannelOptions, ChannelMembersOptions } from '../chats/channels';
 import { ConversationManager } from '../chats/conversations';
 import { MessageManager, SendMessageOptions } from '../chats/messages';
-import { Channel, ChannelMember, Conversation, Message, MessageLiker, PaginationOptions } from '../chats/types';
+import * as crypto from 'crypto';
+import { Channel, ChannelMember, Conversation, FileKeyEntry, Message, MessageLiker, PaginationOptions } from '../chats/types';
 import { UserManager } from '../users/users';
 import { User, CompanyMember, ManagedUser, CompanyGroup } from '../users/types';
 import { AccountManager, OnlineStatus } from '../account/account';
@@ -484,9 +485,51 @@ export class StashcatClient {
 
   // ─── Files ───────────────────────────────────────────────────────────────
 
-  async downloadFile(file: { id: string; encrypted?: boolean; e2e_iv?: string | null }, key?: Buffer): Promise<Buffer> {
+  /**
+   * Download a file. E2E-encrypted files are decrypted automatically when E2E is unlocked:
+   * the file key comes from `file.keys` (or `/file/info`), see `getFileKey()`.
+   * Pass `fileKey` to use an already decrypted file key; without E2E the raw bytes are returned.
+   */
+  async downloadFile(
+    file: { id: string; encrypted?: boolean; e2e_iv?: string | null; keys?: FileKeyEntry[] },
+    fileKey?: Buffer,
+  ): Promise<Buffer> {
     this.requireAuth();
-    return this.messages.downloadFile(file, key);
+    if (file.encrypted && !fileKey && this.security.isUnlocked()) {
+      let iv = file.e2e_iv;
+      if (!iv) iv = (await this.files.getFileInfo(file.id)).e2e_iv;
+      fileKey = await this.getFileKey(file);
+      return this.messages.downloadFile({ ...file, e2e_iv: iv }, fileKey);
+    }
+    return this.messages.downloadFile(file, fileKey);
+  }
+
+  /**
+   * Decrypt the AES key of an E2E-encrypted file (live-verified 2026-10-30, `decryptFileKey` in the
+   * schul.cloud web client): every entry in `file.keys` holds the file key AES-256-CBC-encrypted with
+   * the key of chat `chat_id` (IV in `iv`), or the chat key itself RSA-encrypted in `chat_key`.
+   */
+  async getFileKey(file: { id: string; keys?: FileKeyEntry[] }): Promise<Buffer> {
+    this.requireAuth();
+    if (!this.security.isUnlocked()) throw new Error('E2E not unlocked — call unlockE2E() first');
+    const keys = file.keys?.length ? file.keys : (await this.files.getFileInfo(file.id)).keys ?? [];
+    let lastError: unknown = new Error(`File ${file.id} has no key entries`);
+    for (const entry of keys) {
+      try {
+        let chatKey: Buffer;
+        if (entry.chat_key) {
+          chatKey = this.security.decryptConversationKey(entry.chat_key, `file_chat_${entry.chat_id}`);
+        } else if (entry.type === 'channel') {
+          chatKey = await this.getChannelAesKey(String(entry.chat_id));
+        } else {
+          chatKey = await this.getConversationAesKey(String(entry.chat_id));
+        }
+        return decryptFileKeyEntry(entry, chatKey);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw new Error(`Failed to decrypt key of file ${file.id}: ${lastError instanceof Error ? lastError.message : lastError}`);
   }
 
   async uploadFile(filePath: string, uploadOptions: FileUploadOptions, chunkSize?: number): Promise<FileInfo> {
@@ -990,4 +1033,17 @@ export class StashcatClient {
       throw new Error('Not authenticated. Please login first.');
     }
   }
+}
+
+/** Entschlüsselt einen Eintrag aus `file.keys` mit dem Chat-Schlüssel → 32-Byte-Dateischlüssel. */
+export function decryptFileKeyEntry(entry: Pick<FileKeyEntry, 'key' | 'iv'>, chatKey: Buffer): Buffer {
+  const data = /^[0-9a-f]+$/i.test(entry.key) && entry.key.length % 2 === 0
+    ? Buffer.from(entry.key, 'hex')
+    : Buffer.from(entry.key, 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', chatKey, Buffer.from(entry.iv, 'hex'));
+  const plain = Buffer.concat([decipher.update(data), decipher.final()]);
+  if (plain.length === 32) return plain;
+  const text = plain.toString('utf8');
+  if (/^[0-9a-f]{64}$/i.test(text)) return Buffer.from(text, 'hex');
+  throw new Error(`unexpected file key length (${plain.length} bytes)`);
 }
